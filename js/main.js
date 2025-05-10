@@ -320,3 +320,134 @@ async function show_video_frame() {
       //.style('dominant-baseline','middle')
       .attr('dy','0.35em')
   }
+
+  // pablo Muñoz flower patch visualization
+  async function show_flowerpatch_visualization(){
+    console.log('show_video_frame')
+
+    d3.select('#msg').html('Video Frame...')
+  
+    // image information
+    width = 2816; // proportions of the image for visualization and rectangle placement
+    height = 2816;
+    frame_filename = '/data/flowerpatch/flowerpatch_20240606_11h04_frame_0.jpg';
+
+    var mainDiv = d3.select('#main');
+    mainDiv.html('');
+
+    mainDiv.append('p').text('Flower Patch Visualization');
+    var svg = mainDiv.append("svg")
+      .attr("class","flowerpatchVisualization")
+      .attr('viewBox',`0 0 ${width} ${height}`);  // To be able to scale the content of the SVG with the SVG
+
+    svg.append('image')
+    .attr('href',frame_filename)
+    .attr('x',0)
+    .attr('y',0)
+    .attr('width',width)
+    .attr('height',height);
+
+    // load flower and visits data
+    const flowers = await d3.csv('/data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv');
+    const visits = await d3.csv('/data/flowerpatch/flowerpatch_20240606_11h04.visits.csv');
+
+    // convert flower_id to number
+    convert_columns_to_number(visits, ['flower_id']);
+
+    // visits by flower_id
+    const filteredVisits = visits.filter(d => +d.flower_id !== 0)
+    
+    const visitCount = d3.rollup(
+      filteredVisits,
+      v => v.length,
+      d => d.flower_id
+    );
+
+    // add visits to flowers dataset
+    flowers.forEach(flower => {
+      flower.visit_count = visitCount.get(+flower.flower_id) || 0;
+    });
+
+    console.log(flowers, visits);
+    // color scale
+
+    const maxVisits = d3.max(flowers, d => d.visit_count);
+    console.log('maxVisits', maxVisits);
+    const colorScale = d3.scaleSequential()
+      .domain([0, maxVisits])
+      .interpolator(d3.interpolateGreens);
+
+    //create path for each flower
+    svg.selectAll("path")
+      .data(flowers)
+      .join("path")
+      .attr("d", d => `M ${d.x1},${d.y1} L ${d.x2},${d.y2} L ${d.x3},${d.y3} L ${d.x4},${d.y4} Z`)
+      .attr('stroke', 'black')
+      .attr('stroke-width', '2px')
+      .attr('fill', d => colorScale(d.visit_count))
+      .on('mouseover', function(event, d) {d3.select(this).attr('opacity', 0.5);})
+      .on('mouseout', function(event, d) {d3.select(this).attr('opacity', 1);});
+
+    svg.selectAll("text")
+      .data(flowers)
+      .join("text")
+        .attr("x", d => d.cx)
+        .attr("y", d => d.cy)
+        .text(d => d.flower_id)
+        .attr("fill", "black")
+        .style('font-size', '50px')
+        .style('font-family', 'monospace')
+        .style('font-weight', 'bold')
+        .style('text-anchor', 'middle');
+
+    // Add a legend for the color scale
+    const legendWidth = 500;
+    const legendHeight = 50;
+    const legendMargin = 10;
+
+    // Create a group for the legend
+    const legendGroup = svg.append("g")
+      .attr("class", "legend")
+      .attr("transform", `translate(${width - legendWidth - legendMargin}, ${legendMargin})`);
+
+    // Create a gradient for the legend
+    const legendScale = d3.scaleLinear()
+      .domain(colorScale.domain())
+      .range([0, legendWidth]);
+
+    const legendAxis = d3.axisBottom(legendScale)
+      .ticks(5)
+      .tickFormat(d3.format(".0f"));
+
+    const defs = svg.append("defs");
+    const gradient = defs.append("linearGradient")
+      .attr("id", "legendGradient")
+      .attr("x1", "0%")
+      .attr("y1", "0%")
+      .attr("x2", "100%")
+      .attr("y2", "0%");
+
+    gradient.append("stop")
+      .attr("offset", "0%")
+      .attr("stop-color", colorScale(0));
+
+    gradient.append("stop")
+      .attr("offset", "100%")
+      .attr("stop-color", colorScale(d3.max(flowers, d => d.visit_count)));
+
+    // Add the gradient rectangle
+    legendGroup.append("rect")
+      .attr("width", legendWidth)
+      .attr("height", legendHeight)
+      .style("fill", "url(#legendGradient)");
+
+    // Add the legend axis
+    legendGroup.append("g")
+      .attr("transform", `translate(0, ${legendHeight})`)
+      .call(legendAxis)
+      .selectAll("text") // Select all text elements (tick labels)
+      .style("font-size", "30px");
+    
+    legendGroup.selectAll('.tick line')
+      .attr('stroke-width', 2);
+  }
