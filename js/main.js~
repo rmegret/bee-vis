@@ -330,7 +330,9 @@ async function show_chronogram() {
 		] )
 	const [data_visits, data_bees, data_flowers] = await promise
 
-
+	convert_columns_to_number(data_visits, ['start_frame', 'end_frame', 'bee_id']);
+	convert_columns_to_number(data_bees, ['bee_id']);
+	convert_columns_to_number(data_flowers, ['flower_id']);
 
 	// Create lookup maps for beeColors and flowerColors
 	const beeColorMap = new Map(data_bees.map(d => [d.bee_id, d.paint_color]));
@@ -342,8 +344,6 @@ async function show_chronogram() {
 		beeColor: beeColorMap.get(d.bee_id),
 		flowerColor: flowerColorMap.get(d.flower_id)
 	}));
-
-  	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
 
 	console.log(mergedData)
 	var mainDiv = d3.select('#main')
