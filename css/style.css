@@ -31,3 +31,34 @@ table, th, td {
 	fill: steelblue;
 	shape-rendering: crispEdges;
 }
+svg.flowerpatchVisualization {
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+svg.flowerpatchVisualization image {
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100%;
+  height: auto;
+}
+
+#flex-container {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+#svg-container {
+  flex: 1 1 0%;
+  max-width: 80vw;
+}
+
+#bee-list-container {
+  margin-left: 30px;
+  min-width: 200px;
+}
