@@ -15,7 +15,7 @@ class Chronogram {
 		let vis = this;
 
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
-    	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
+    		vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
 
 		vis.data = vis.data.filter(d => d.bee_id !== 0);
 
