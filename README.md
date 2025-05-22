@@ -10,6 +10,7 @@ and open a browser at port 8001 to access `index.html`
 
 - `index.html` main page from which the javascript is loaded
 - `js/main.js` main javascrip code
+- `js/heatmap.js` visualization code
 - `js/d3.v6.min.js` D3 library used for visualization
 - `css/style.css` global CSS file to style the page
 - `data/` folder where data is stored (see below)
