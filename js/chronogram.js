@@ -81,6 +81,8 @@ class Chronogram {
 		console.log(vis.groupedData);
 		vis.yScale.domain([...new Set(vis.data.map(d => d.bee_id))].sort((a, b) => a - b));
 		//Update yScale if a different bee range is received.
+		vis.xScale = d3.scaleLinear().domain([0, d3.max(vis.data, d => d.end_frame)])
+		//Update xScale if different tracks with higher or lower end_frame max are received
 		
 		vis.renderVis();
 	}
