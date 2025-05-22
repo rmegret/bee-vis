@@ -22,10 +22,14 @@ class FlowerHeatMap{
         let vis = this;
 
         //---Create and Add containers---
-
         vis.mainDiv.append('p').text('Flower Patch Visualization');
         vis.mainDiv.append('div')
             .attr('id', 'legend-container')
+            .style('width', '100%')
+            .style('margin', '20px 0');
+
+        vis.mainDiv.append('div')
+            .attr('id', 'bee-path-container')
             .style('width', '100%')
             .style('margin', '20px 0');
 
@@ -34,19 +38,15 @@ class FlowerHeatMap{
             .style('display', 'flex')
             .style('align-items', 'flex-start');
 
-        // ---Add Elements to the Containers---
+        // ---Add Elements to containers---
         vis.svgDiv = vis.flexDiv.append('div').attr('id', 'svg-container');
         vis.svg = vis.svgDiv.append("svg")
             .attr("class","flowerpatchVisualization")
             .attr('viewBox',`0 0 ${vis.config.svgWidth} ${vis.config.svgHeight}`); // To be able to scale the content of the SVG with the SVG
 
-        vis.svg.append('image')
-            .attr('class', 'flowerpatchFrame')
-            .attr('href',vis.frame_filename)
-            .attr('x',0)
-            .attr('y',0)
-            .attr('width',vis.config.svgWidth)
-            .attr('height',vis.config.svgHeight);
+        // Group for BeePath
+        vis.beePathGroup = vis.svg.append('g')
+            .attr('class', 'beePathGroup');
 
         vis.beeListDiv = vis.flexDiv.append('div')
             .attr('id', 'bee-list-container')
@@ -57,11 +57,15 @@ class FlowerHeatMap{
             .attr('width', vis.config.legendWidth)
             .attr('height', vis.config.legendHeight + 30);
 
+        vis.pathLSvg = vis.mainDiv.select('#bee-path-container').append('svg')
+            .attr('width', vis.config.legendWidth)
+            .attr('height', vis.config.legendHeight + 30);
+
         //---Add Scales---
         const maxVisits = d3.max(vis.data, d => d.visit_count);
         vis.colorScale = d3.scaleSequential()
             .domain([0, maxVisits])
-            .interpolator(d3.interpolateGreens);
+            .interpolator(d3.interpolateRgb("cyan", "purple"));
         
         vis.legendScale = d3.scaleLinear()
             .domain(vis.colorScale.domain())
@@ -79,7 +83,7 @@ class FlowerHeatMap{
     {
         let vis = this;
 
-        // Use visits data already loaded and stored in vis.visits
+        //use data in visits to update flower data
         let filteredVisits = vis.visits.filter(d => +d.flower_id !== 0);
         if (bee_id) {
             filteredVisits = filteredVisits.filter(d => d.bee_id === bee_id);
@@ -101,15 +105,50 @@ class FlowerHeatMap{
         const maxVisits = d3.max(vis.data, d => d.visit_count);
         vis.colorScale.domain([0, maxVisits]);
 
-        // Update flower colors
+        // Update flower colors for bee filter
         vis.svg.selectAll("path")
             .data(vis.data)
             .attr('fill', d => vis.colorScale(d.visit_count));
 
-        // Update legend gradient
+        // Update legend gradient for bee filter
         vis.legendSvg.select("defs #legendGradient stop[offset='100%']")
             .attr("stop-color", vis.colorScale(maxVisits));
 
+        // ---Draw/update bee path---
+        vis.beePathGroup.selectAll("*").remove(); // Clear previous path
+
+        if (bee_id) {
+            // Get visits for this bee, sorted by start_frame
+            const beeVisits = vis.visits
+                .filter(d => d.bee_id === bee_id && +d.flower_id !== 0)
+                .sort((a, b) => +a.start_frame - +b.start_frame);
+
+            // Get flower centers for each visit
+            const points = beeVisits.map(d => {
+                const flower = vis.data.find(f => +f.flower_id === +d.flower_id);
+                return flower ? [flower.cx, flower.cy] : null;
+            });
+
+            if (points.length > 1) {
+                // Draw path
+                const pathScale = d3.scaleSequential()
+                    .domain([0, points.length])
+                    .interpolator(d3.interpolateRgb("yellow", "red"));
+
+                for (let i = 0; i < points.length - 1; i++)
+                {
+                    vis.beePathGroup.append("line")
+                        .attr("x1", points[i][0])
+                        .attr("y1", points[i][1])
+                        .attr("x2", points[i + 1][0])
+                        .attr("y2", points[i + 1][1])
+                        .attr("stroke", pathScale(i))
+                        .attr("stroke-width", 40)
+                        .attr("stroke-opacity", 1);
+                }
+            }
+        } 
+        vis.renderBeePathLegend();
         vis.renderVis();
         vis.renderLegend();
     }
@@ -117,7 +156,17 @@ class FlowerHeatMap{
     renderVis()
     {
         let vis = this;
-        
+
+        //---Add tooltip div---
+        vis.tooltip = vis.mainDiv.append("div")
+            .attr("class", "tooltip")
+            .style("position", "absolute")
+            .style("background", "white")
+            .style("border", "5px solid black")
+            .style("padding", "10px")
+            .style("z-index", "10")
+            .style("visibility", "hidden");
+
         //---Add Heatmap---
         vis.svg.selectAll("path")
             .data(vis.data)
@@ -126,9 +175,19 @@ class FlowerHeatMap{
             .attr('stroke', 'black')
             .attr('stroke-width', '2px')
             .attr('fill', d => vis.colorScale(d.visit_count))
-
-            .on('mouseover', function(event, d) {d3.select(this).attr('opacity', 0.5);})
-            .on('mouseout', function(event, d) {d3.select(this).attr('opacity', 1);});
+            .on('mouseover', function(event, d) 
+            {
+                vis.tooltip
+                    .html(`Flower ID: ${d.flower_id}<br>Visit Count: ${d.visit_count}`)
+                    .style("left", (event.pageX + 5) + "px")
+                    .style("top", (event.pageY + 5) + "px")
+                    .style("visibility", "visible");
+            })
+            .on('mouseout', function(event, d) 
+            {
+                vis.tooltip
+                    .style("visibility", "hidden");
+            });
 
         vis.svg.selectAll("rect")
             .data(vis.data)
@@ -225,7 +284,47 @@ class FlowerHeatMap{
             .attr('transform', `translate(${vis.config.legendMargin}, 0)`); // Move the text to the right by 10 pixels
         
         vis.legendSvg.selectAll('.tick line')
-            .attr('stroke-width', 2);
+         .attr('stroke-width', 2);
+    }
+
+    renderBeePathLegend()
+    {
+        let vis = this;
+
+        vis.pathLSvg.selectAll("*").remove();
+
+        const defs = vis.pathLSvg.append("defs");
+        const gradient = defs.append("linearGradient")
+            .attr("id", "beePathGradient")
+            .attr("x1", "0%")
+            .attr("y1", "0%")
+            .attr("x2", "100%")
+            .attr("y2", "0%");
+        
+        const pathScale = d3.scaleSequential()
+            .domain([0, 10])
+            .interpolator(d3.interpolateRgb("yellow", "red"));
+
+        gradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", pathScale(0));
+
+        gradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", pathScale(10));
+
+        vis.pathLSvg.append("rect")
+            .attr("width", vis.config.legendWidth)
+            .attr("height", vis.config.legendHeight)
+            .style("fill", "url(#beePathGradient)");
+        
+        vis.pathLSvg.append("text")
+            .attr("x", vis.config.legendWidth)
+            .attr("y", vis.config.legendHeight + 20)
+            .attr("fill", "black")
+            .style("font-size", "16px")
+            .style("text-anchor", "end")
+            .text("End");
     }
 
 }
