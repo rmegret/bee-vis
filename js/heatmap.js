@@ -8,11 +8,9 @@ class FlowerHeatMap{
         legendHeight: 30,
         legendMargin: 10,
         parentElement: _config.parentElement,
-        frame_fileName: '/data/flowerpatch/flowerpatch_20240606_11h04_frame_0.jpg'
     }
         this.data = data;
         this.visits = visits;
-        this.frame_filename = _config.frame_fileName;
         this.mainDiv = d3.select(_config.parentElement);
         this.initVis();
     }
