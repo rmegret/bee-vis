@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bee Visualization</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/bee-images.css">
+    <script src="js/d3.v6.min.js"></script>
+    <script src="js/chronogram.js"></script>
+    <script src="js/bee-images.js"></script>
+    <style>
+        /* Layout containers: stack chronogram above bee panel */
+        .visualization-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            gap: 20px; /* space between the two windows */
+        }
+
+        /* Chronogram container: fixed height smaller */
+        #chronogram-container {
+            flex: 0 0 35vh;    /* make chronogram 35% of viewport height */
+            min-width: 0;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: auto;
+        }
+
+        /* Bee images container: bottom half */
+        #bee-images-window {
+            flex: 1;           /* fill leftover height */
+            min-width: 0;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        /* Shrink bee thumbnails */
+        .bee-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        /* Keep existing helpers */
+        #bee-images-container {
+            width: 100%;
+            overflow: auto;
+        }
+
+        #selected-tracks-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+
+        .track {
+            cursor: pointer;
+            transition: stroke 0.2s;
+        }
+
+        .track:hover {
+            stroke: #666;
+            stroke-width: 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="visualization-container">
+        <!-- Chronogram container -->
+        <div id="chronogram-container">
+            <h2>Bee Activity Timeline</h2>
+            <div id="chronogram"></div>
+            <div id="selected-tracks-info">
+                <h3>Selected Tracks</h3>
+                <div id="selected-tracks-list"></div>
+            </div>
+        </div>
+
+        <!-- Bee images container -->
+        <div id="bee-images-window">
+            <div id="bee-images-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Chronogram
+        const chronogramConfig = {
+            parentElement: '#chronogram',
+            // Add other config options as needed
+        };
+
+        // Load data and initialize visualizations
+        Promise.all([
+            d3.csv("data/flowerpatch/flowerpatch_20240606_11h04.visits.csv"),
+            d3.csv("data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv"),
+            d3.csv("data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv")
+        ]).then(([visits, bee_labels, tracks]) => {
+            // Initialize Chronogram
+            const chronogram = new Chronogram(chronogramConfig, {
+                visits: visits,
+                bee_labels: bee_labels,
+                tracks: tracks
+            });
+
+            // Function to update selected tracks display
+            function updateSelectedTracks() {
+                const selectedTracks = chronogram.getSelectedTracks();
+                const tracksList = d3.select('#selected-tracks-list');
+                
+                // Clear previous content
+                tracksList.html('');
+                
+                if (selectedTracks.length === 0) {
+                    tracksList.append('p').text('No tracks selected');
+                    return;
+                }
+
+                // Create list of selected tracks
+                const list = tracksList.append('ul');
+                selectedTracks.forEach(track => {
+                    list.append('li')
+                        .text(`Track ID: ${track.track_id}, Bee ID: ${track.bee_id}`);
+                });
+            }
+
+            // Add event listener for track selection
+            document.addEventListener('tracksSelected', updateSelectedTracks);
+        });
+    </script>
+</body>
+</html>

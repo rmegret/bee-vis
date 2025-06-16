@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bee & Flower Visits Visualization</title>
+    <meta charset="UTF-8">
+    <link rel="icon" href="data:;base64,iVBORwOKGO=" />
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+      .bar {
+        fill: rgba(33, 30, 194, 0.904);
+      }
+      .bar.highlight {
+        fill: orange;
+      }
+      .axis-label {
+        font-size: 12px;
+        font-weight: bold;
+      }
+    </style>
+</head>
+<body>
+  <h1>Bee & Flower Visits Visualization</h1>
+  <div>
+    <h2>Flower Chart</h2>
+    <svg id="flowerChart" width="800" height="400"></svg>
+  </div>
+  <div>
+    <h2>Bee Chart</h2>
+    <svg id="beeChart" width="800" height="400"></svg>
+  </div>
+  <div style="height: 120px;"></div> <!-- Add this for extra space -->
+
+  <!-- D3 bundle (make sure this is loaded BEFORE your chart_bar.js) -->
+  <script src="js/d3.v6.min.js"></script>
+  <!-- Your chart code -->
+  <script src="js/chart_bar.js"></script>
+
+
+  <!-- If you need main.js, load it last -->
+  <script src="js/main.js"></script>
+</body>
+</html>
