@@ -15,7 +15,7 @@ class Chronogram {
 		let vis = this;
 
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
-    		vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
+    	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
 
 		vis.data = vis.data.filter(d => d.bee_id !== 0);
 
@@ -78,7 +78,7 @@ class Chronogram {
 		let vis = this;
 
 		vis.groupedData = d3.groups(vis.data, d => d.bee_id); //Group visits by bee id
-		console.log(vis.groupedData);
+		
 		vis.yScale.domain([...new Set(vis.data.map(d => d.bee_id))].sort((a, b) => a - b));
 		//Update yScale if a different bee range is received.
 		vis.xScale.domain([0, d3.max(vis.data, d => d.end_frame)]);

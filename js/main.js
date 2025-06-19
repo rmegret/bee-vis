@@ -330,8 +330,6 @@ async function show_chronogram() {
 		])
 	const [data_visits, data_bees, data_flowers] = await promise
 
-
-
 	// Create lookup maps for beeColors and flowerColors
 	const beeColorMap = new Map(data_bees.map(d => [d.bee_id, d.paint_color]));
 	const flowerColorMap = new Map(data_flowers.map(d => [d.flower_id, d.color]));
@@ -345,25 +343,64 @@ async function show_chronogram() {
 	}));
 
   	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
-
+	
 	var mainDiv = d3.select('#main')
   	mainDiv.html('')
 
+	var chronoDiv = d3.select('#chronogram')
+  	chronoDiv.html('')
+
 	const chronogram = new Chronogram({
-		parentElement: '#main',
+		parentElement: '#chronogram',
 	}, mergedData);
 }
 
 async function show_barchart() {
 
-	promise = Promise.all(
-		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
-		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv')
-		])
-	const [data_visits, data_tracks] = await promise
+	let beeVisFullData;
+	let beeVisTracksData;
+	let beeToFlowers;
+	let beeVisFlowerDurations, beeVisBeeDurations;
+
+	Promise.all([
+		d3.csv("data/flowerpatch/flowerpatch_20240606_11h04.visits.csv", d3.autoType), // Visit data
+		d3.csv("data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv", d3.autoType)  // Tracking data
+	]).then(([visits, tracks]) => {
+	beeVisFullData = visits;      // Store visits data globally
+	beeVisTracksData = tracks;    // Store tracks data globally
 
 
+  	// Calculate duration for each visit (in frames)
+  	visits.forEach(d => d.duration = d.end_frame - d.start_frame);
 
+  	// Map each bee to the set of flowers it visited
+  	beeToFlowers = d3.rollup(
+    	visits,
+    	v => new Set(v.map(d => d.flower_id)),
+    	d => d.bee_id
+  	);
+
+  	// Aggregate total duration per flower
+  	beeVisFlowerDurations = d3.rollup(visits, v => d3.sum(v, d => d.duration), d => d.flower_id);
+  	// Aggregate total duration per bee
+  	beeVisBeeDurations = d3.rollup(visits, v => d3.sum(v, d => d.duration), d => d.bee_id);
+
+	var mainDiv = d3.select('#main')
+  	mainDiv.html('')
+
+	var beeBarDiv = d3.select('#bee_bar')
+  	beeBarDiv.html('')
+
+	var flowerBarDiv = d3.select('#flower_bar')
+  	flowerBarDiv.html('')
+
+	const bee_barchart = new Barchart({
+		parentElement: '#bee_bar',
+	}, data_visit, data_tracks);
+
+	const flower_barchart = new Barchart({
+		parenElement: '#flower_bar',
+	}, data_visit, data_tracks);
 }
 
 async function show_patchview() {
@@ -391,7 +428,13 @@ async function show_patchview() {
     	flower.visit_count = visitCount.get(+flower.flower_id) || 0;
   	});
 
+	var mainDiv = d3.select('#main')
+  	mainDiv.html('')
+
+	var patchDiv = d3.select('#patchview')
+  	patchDiv.html('')
+
   	const patchview = new FlowerPatch({
-		parentElement: '#main'
+		parentElement: '#patchview'
 	}, data_flowers, data_visits);
 }
