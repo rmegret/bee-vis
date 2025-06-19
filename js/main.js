@@ -268,6 +268,9 @@ async function show_video_frame() {
   var mainDiv = d3.select('#main')
   mainDiv.html('')
 
+  var containerDiv = d3.select('.container')
+  containerDiv('')
+
   // Add as a simple image tag
   // mainDiv.append('p').text('Plain <img> (cannot paint on it)')
   // mainDiv.append('img')
@@ -328,14 +331,14 @@ async function show_chronogram() {
 		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv'),
 		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
 		])
-	const [data_visits, data_bees, data_flowers] = await promise
+	const [visits, bees, flowers] = await promise
 
 	// Create lookup maps for beeColors and flowerColors
-	const beeColorMap = new Map(data_bees.map(d => [d.bee_id, d.paint_color]));
-	const flowerColorMap = new Map(data_flowers.map(d => [d.flower_id, d.color]));
+	const beeColorMap = new Map(bees.map(d => [d.bee_id, d.paint_color]));
+	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.color]));
 
 	// Merge data into visits
-	const mergedData = data_visits.map(d => ({
+	const mergedData = visits.map(d => ({
 		...d,
 		beeColor: beeColorMap.get(d.bee_id),
 		flowerColor: flowerColorMap.get(d.flower_id),
@@ -350,40 +353,37 @@ async function show_chronogram() {
 	var chronoDiv = d3.select('#chronogram')
   	chronoDiv.html('')
 
+	var galleryDiv = d3.select('#gallery')
+	galleryDiv.html('')
+
 	const chronogram = new Chronogram({
 		parentElement: '#chronogram',
 	}, mergedData);
 }
 
-async function show_barchart() {
+async function show_barcharts() {
 
-	let beeVisFullData;
-	let beeVisTracksData;
-	let beeToFlowers;
-	let beeVisFlowerDurations, beeVisBeeDurations;
+	promise = Promise.all(
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
+		])
+	const [visits, flowers] = await promise
 
-	Promise.all([
-		d3.csv("data/flowerpatch/flowerpatch_20240606_11h04.visits.csv", d3.autoType), // Visit data
-		d3.csv("data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv", d3.autoType)  // Tracking data
-	]).then(([visits, tracks]) => {
-	beeVisFullData = visits;      // Store visits data globally
-	beeVisTracksData = tracks;    // Store tracks data globally
+	convert_columns_to_number(visits, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
 
+	visits.forEach(d => d.duration = d.end_frame - d.start_frame);
 
-  	// Calculate duration for each visit (in frames)
-  	visits.forEach(d => d.duration = d.end_frame - d.start_frame);
+	const beeVisits = d3.rollup(visits, v => d3.sum(v, d => d.duration), d => d.bee_id);
+	console.log(beeVisits);	
 
-  	// Map each bee to the set of flowers it visited
-  	beeToFlowers = d3.rollup(
-    	visits,
-    	v => new Set(v.map(d => d.flower_id)),
-    	d => d.bee_id
-  	);
-
-  	// Aggregate total duration per flower
-  	beeVisFlowerDurations = d3.rollup(visits, v => d3.sum(v, d => d.duration), d => d.flower_id);
-  	// Aggregate total duration per bee
-  	beeVisBeeDurations = d3.rollup(visits, v => d3.sum(v, d => d.duration), d => d.bee_id);
+	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.color]));
+	const flowerVisits = visits.map(d => ({
+		...d,
+		flower_Color: flowerColorMap.get(d.flower_id),
+	}));	
+	
+	flowerVisits = d3.rollup(flowerVisits, v => d3.sum(v, d => d.duration), d => d.flower_color);
+	console.log(flowerVisits);
 
 	var mainDiv = d3.select('#main')
   	mainDiv.html('')
@@ -396,11 +396,11 @@ async function show_barchart() {
 
 	const bee_barchart = new Barchart({
 		parentElement: '#bee_bar',
-	}, data_visit, data_tracks);
+	}, beeVisits, 'Bee');
 
 	const flower_barchart = new Barchart({
 		parenElement: '#flower_bar',
-	}, data_visit, data_tracks);
+	}, flowerVisits, 'Flower');
 }
 
 async function show_patchview() {
@@ -409,13 +409,12 @@ async function show_patchview() {
 		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv'),
 		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv')
 		])
-	const [data_flowers, data_visits] = await promise
+	const [flowers, visits] = await promise
 
-	convert_columns_to_number(data_visits, ['flower_id']);
-
+	convert_columns_to_number(visits, ['flower_id']);
 
   	// visits by flower_id
-  	const filteredVisits = data_visits.filter(d => +d.flower_id !== 0)
+  	const filteredVisits = visits.filter(d => +d.flower_id !== 0)
   
   	const visitCount = d3.rollup(
     	filteredVisits,
@@ -424,7 +423,7 @@ async function show_patchview() {
   	);
 
   	// add visits to flowers dataset (will be the data used for heatmap)
-  	data_flowers.forEach(flower => {
+  	flowers.forEach(flower => {
     	flower.visit_count = visitCount.get(+flower.flower_id) || 0;
   	});
 
@@ -436,5 +435,11 @@ async function show_patchview() {
 
   	const patchview = new FlowerPatch({
 		parentElement: '#patchview'
-	}, data_flowers, data_visits);
+	}, flowers, filteredVisits);
+}
+
+async function show_visualization() {
+	show_chronogram();
+	show_barcharts();
+	show_patchview();
 }

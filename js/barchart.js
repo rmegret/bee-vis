@@ -1,12 +1,13 @@
 class Barchart {
-	constructor(_config, _data) {
+	constructor(_config, _data, _type) {
 		this.config = {
 			parentElement: _config.parentElement,
 			containerWidth: 800,
 			containerHeight: 400,
-			margin: {top: 50, right: 20, bottom: 20, left:75},	
+			margin: {top: 20, right: 20, bottom: 40, left:80},	
 		};
 		this.data = _data;
+		this.type = _type;
 		this.selectedBee;
 		this.selectedFlower;
 		this.initVis();
@@ -29,10 +30,8 @@ class Barchart {
 			.range([height + margin.top, margin.top]);
 
 		vis.xAxis = d3.axisBottom(vis.xScale) 
-			.ticks(10);
 
 		vis.yAxis = d3.axisLeft(vis.yScale)
-			.tickFormat(d => vis.data[0]);
 
 		vis.svg = d3.select(vis.config.parentElement).append('svg')
 			.attr('width', vis.config.containerWidth)
@@ -55,12 +54,16 @@ class Barchart {
 	
 	updateVis() {
 		let vis = this;
+		
 
+
+		
 	}
 
 	renderVis() {
 		let vis = this;
 
-	}
+	
 
+	}
 }

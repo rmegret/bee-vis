@@ -31,3 +31,22 @@ table, th, td {
 	fill: steelblue;
 	shape-rendering: crispEdges;
 }
+
+.container {
+	display: grid;
+}
+
+.visBar {
+	fill: rgba(33, 30, 194, 0.904);
+}
+
+.visBar.highlight {
+    fill: orange;
+}
+
+.axis-label {
+	font-size: 12px;
+	font-weight: bold;
+}
+
+
