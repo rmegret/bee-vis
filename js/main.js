@@ -320,3 +320,78 @@ async function show_video_frame() {
       //.style('dominant-baseline','middle')
       .attr('dy','0.35em')
   }
+
+async function show_chronogram() {
+
+	promise = Promise.all( 
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
+		])
+	const [data_visits, data_bees, data_flowers] = await promise
+
+
+
+	// Create lookup maps for beeColors and flowerColors
+	const beeColorMap = new Map(data_bees.map(d => [d.bee_id, d.paint_color]));
+	const flowerColorMap = new Map(data_flowers.map(d => [d.flower_id, d.color]));
+
+	// Merge data into visits
+	const mergedData = data_visits.map(d => ({
+		...d,
+		beeColor: beeColorMap.get(d.bee_id),
+		flowerColor: flowerColorMap.get(d.flower_id),
+		selected: false
+	}));
+
+  	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
+
+	var mainDiv = d3.select('#main')
+  	mainDiv.html('')
+
+	const chronogram = new Chronogram({
+		parentElement: '#main',
+	}, mergedData);
+}
+
+async function show_barchart() {
+
+	promise = Promise.all(
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv')
+		])
+	const [data_visits, data_tracks] = await promise
+
+
+
+}
+
+async function show_patchview() {
+
+	promise = Promise.al(
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv')
+		])
+	const [data_flowers, data_visits] = await promise
+
+	convert_columns_to_number(data_visits, ['flower_id']);
+
+
+  	// visits by flower_id
+  	const filteredVisits = data_visits.filter(d => +d.flower_id !== 0)
+  
+  	const visitCount = d3.rollup(
+    	filteredVisits,
+    	v => v.length,
+    	d => d.flower_id
+  	);
+
+  	// add visits to flowers dataset (will be the data used for heatmap)
+  	data_flowers.forEach(flower => {
+    	flower.visit_count = visitCount.get(+flower.flower_id) || 0;
+  	});
+
+  	const patchview = new FlowerPatch({
+		parentElement: '#main'
+	}, data_flowers, data_visits);
+}
