@@ -24,14 +24,14 @@ class Barchart {
 			.domain(data.map(d => d.id))
 			.range(margin.left, margin.left + width])
 			.padding(0.2);
-
 		vis.yScale = d3.scaleLinear()
 			.domain([0, d3.max(data, d => d.duration)]).nice()
 			.range([height + margin.top, margin.top]);
 
 		vis.xAxis = d3.axisBottom(vis.xScale) 
-
+			.tickFormat(d => vis.type == "Bee" ? `Bee ${d}` : `${d}`);
 		vis.yAxis = d3.axisLeft(vis.yScale)
+			.ticks(10);
 
 		vis.svg = d3.select(vis.config.parentElement).append('svg')
 			.attr('width', vis.config.containerWidth)
@@ -55,15 +55,23 @@ class Barchart {
 	updateVis() {
 		let vis = this;
 		
-
-
+		vis.yScale.domain([0, d3.max(data, d => d.duration)]).nice();
 		
+		vis.renderVis();	
 	}
 
 	renderVis() {
 		let vis = this;
 
-	
+		const bars = vis.chartArea.selectAll('.visBar')
+			.data(data);
 
+		bars.enter().append('rect')
+			.attr('class', 'bar')
+			.merge(bars)
+			.attr('x', d=> vis.xScale(d.id))
+			.attr('y', d=> vis.yScale(d.duration))
+			.attr('width', vis.xScale.bandwidth())
+			.attr('height', d => height + margin.top - yScale(d.duration))
 	}
 }
