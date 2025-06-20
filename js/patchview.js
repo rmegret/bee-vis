@@ -1,4 +1,4 @@
-class FlowerPatch
+class FlowerPatch {
     constructor(_config, data, visits)
     {
         this.config = {
@@ -218,7 +218,9 @@ class FlowerPatch
             v => v.length, 
             d => d.bee_id
         );
-        const beeIds = Array.from(beeIdMap.keys()).sort();
+        const beeIds = Array.from(beeIdMap.keys()).sort(function(a, b) {
+			return a - b;
+		});
 
         vis.beeListDiv.html(""); // Clear previous content
         vis.beeListDiv.append('h3').text('Bees');

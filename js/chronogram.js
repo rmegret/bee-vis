@@ -18,6 +18,7 @@ class Chronogram {
     	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
 
 		vis.data = vis.data.filter(d => d.bee_id !== 0);
+		vis.data = vis.data.filter(d => d.flower_id !== 0);
 
 		vis.xScale = d3.scaleLinear()
 			.domain([0, d3.max(vis.data, d => d.end_frame)])

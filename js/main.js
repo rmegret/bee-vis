@@ -269,7 +269,7 @@ async function show_video_frame() {
   mainDiv.html('')
 
   var containerDiv = d3.select('.container')
-  containerDiv('')
+  containerDiv.html('')
 
   // Add as a simple image tag
   // mainDiv.append('p').text('Plain <img> (cannot paint on it)')
@@ -357,9 +357,15 @@ async function show_chronogram() {
 	galleryDiv.html('')
 
 	const chronogram = new Chronogram({
-		parentElement: '#chronogram',
+		parentElement: '#main',
 	}, mergedData);
 }
+
+async function show_gallery() {
+
+	
+}
+
 
 async function show_barcharts() {
 
@@ -374,16 +380,9 @@ async function show_barcharts() {
 	visits.forEach(d => d.duration = d.end_frame - d.start_frame);
 
 	const beeVisits = d3.rollup(visits, v => d3.sum(v, d => d.duration), d => d.bee_id);
-	console.log(beeVisits);	
-
-	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.color]));
-	const flowerVisits = visits.map(d => ({
-		...d,
-		flower_Color: flowerColorMap.get(d.flower_id),
-	}));	
 	
-	flowerVisits = d3.rollup(flowerVisits, v => d3.sum(v, d => d.duration), d => d.flower_color);
-	console.log(flowerVisits);
+	const flowerVisits = d3.rollup(visits, v => d3.sum(v, d => d.duration), d => d.flower_id);
+
 
 	var mainDiv = d3.select('#main')
   	mainDiv.html('')
@@ -395,23 +394,24 @@ async function show_barcharts() {
   	flowerBarDiv.html('')
 
 	const bee_barchart = new Barchart({
-		parentElement: '#bee_bar',
+		parentElement: '#main',
 	}, beeVisits, 'Bee');
 
-	const flower_barchart = new Barchart({
+/*	const flower_barchart = new Barchart({
 		parenElement: '#flower_bar',
 	}, flowerVisits, 'Flower');
+*/
 }
 
 async function show_patchview() {
 
-	promise = Promise.al(
+	promise = Promise.all(
 		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv'),
 		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv')
 		])
 	const [flowers, visits] = await promise
 
-	convert_columns_to_number(visits, ['flower_id']);
+	convert_columns_to_number(visits, ['flower_id', 'bee_id']);
 
   	// visits by flower_id
   	const filteredVisits = visits.filter(d => +d.flower_id !== 0)
@@ -434,8 +434,8 @@ async function show_patchview() {
   	patchDiv.html('')
 
   	const patchview = new FlowerPatch({
-		parentElement: '#patchview'
-	}, flowers, filteredVisits);
+		parentElement: '#main'
+	}, flowers, visits);
 }
 
 async function show_visualization() {
