@@ -336,7 +336,7 @@ async function show_chronogram() {
 	// Create lookup maps for beeColors and flowerColors
 	const beeColorMap = new Map(bees.map(d => [d.bee_id, d.paint_color]));
 	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.color]));
-
+	
 	// Merge data into visits
 	const mergedData = visits.map(d => ({
 		...d,
@@ -344,8 +344,8 @@ async function show_chronogram() {
 		flowerColor: flowerColorMap.get(d.flower_id),
 		selected: false
 	}));
-
-  	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
+  	
+	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
 	
 	var mainDiv = d3.select('#main')
   	mainDiv.html('')
@@ -371,36 +371,41 @@ async function show_barcharts() {
 
 	promise = Promise.all(
 		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv'),
 		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
 		])
-	const [visits, flowers] = await promise
+	const [visits, bees, flowers] = await promise
 
-	convert_columns_to_number(visits, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
-
-	visits.forEach(d => d.duration = d.end_frame - d.start_frame);
-
-	const beeVisits = d3.rollup(visits, v => d3.sum(v, d => d.duration), d => d.bee_id);
+	// Create lookup maps for beeColors and flowerColors
+	const beeColorMap = new Map(bees.map(d => [d.bee_id, d.paint_color]));
+	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.color]));	
 	
-	const flowerVisits = d3.rollup(visits, v => d3.sum(v, d => d.duration), d => d.flower_id);
+	const mergedData = visits.map(d => ({
+		...d,
+		bee_color: beeColorMap.get(d.bee_id),
+		flower_color: flowerColorMap.get(d.flower_id)
+	}));
 
+	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
+	
+
+	//Add a 'duration' attribute to every visit
+	mergedData.forEach(d => d.duration = d.end_frame - d.start_frame);	
+
+	
+	//Filters can be bee_id, flower_id, bee_color, flower_color
+	let filter = "bee_id";
 
 	var mainDiv = d3.select('#main')
   	mainDiv.html('')
-
+	
 	var beeBarDiv = d3.select('#bee_bar')
   	beeBarDiv.html('')
 
-	var flowerBarDiv = d3.select('#flower_bar')
-  	flowerBarDiv.html('')
-
-	const bee_barchart = new Barchart({
+	const barchart = new Barchart({
 		parentElement: '#main',
-	}, beeVisits, 'Bee');
+	}, mergedData, filter);
 
-/*	const flower_barchart = new Barchart({
-		parenElement: '#flower_bar',
-	}, flowerVisits, 'Flower');
-*/
 }
 
 async function show_patchview() {

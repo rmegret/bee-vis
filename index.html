@@ -6,7 +6,7 @@
     <link rel="icon" href="data:;base64,iVBORwOKGO=" />
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body onload="show_visits_table()">
+<body onload="show_chronogram()">
     <!-- Add HTML content, SVG drawing area, ... -->
     
     <!-- D3 bundle -->
@@ -15,8 +15,13 @@
     <!-- Our JS code -->
     <!-- <script src="js/main.js"></script> -->
     <script src="js/main.js"></script>
+	<script src="js/chronogram.js"></script>
+    <script src="js/barchart.js"></script>
+	<script src="js/gallery.js"></script>
+    <script src="js/patchview.js"></script>
+ 
 
-    <h1>DEMO BEE VISUALIZATION</h1>
+	<h1>DEMO BEE VISUALIZATION</h1>
 
     <div>Flowerpatch dataset tables:
     <button onclick="show_visits_table()">Visits</button>
@@ -28,31 +33,23 @@
     <div>Combined data:
     <button onclick="show_visits_with_bee_labels_table()">Visits with Bee Information</button>
     <button onclick="show_video_frame()">Video Frame with Flowers</button>
- 	<button onclick="show_visualization()">Visualization</button> 
+	<button onclick="show_barcharts()">Bar Charts</button>
+	<button onclick="show_chronogram()">Chronogram</button>
+	<button onclick="show_patchview()">Flowerpatch View</button>
+ <!--	<button onclick="show_visualization()">Visualization</button> -->
 
 	</div>
 
     <div id="msg"></div>
 
     <div id="main"></div>
+	<div id="main2"></div>
 
 	<div class="container">
-		<div>
-			<h2>Chronogram</h2>
-			<div id="chronogram"></div>
-		</div>
-		<div>
-			<h2>Flowerpatch View</h2>
-			<div id="patchview"></div>
-		</div>
-		<div>
-			<h2>Bee Chart</h2>	
-			<div id="bee_bar"></div>
-		</div>
-		<div>
-			<h2>Flower Chart</h2>
-			<div id="flower_bar"></div>
-		</div>
+		<div id="chronogram"></div>
+		<div id="patchview"></div>
+		<div id="bee_bar"></div>
+		<div id="flower_bar"></div>
 	</div>
 </body>
 </html>
