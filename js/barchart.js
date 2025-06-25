@@ -8,11 +8,16 @@ class Barchart {
 		};
 		this.data = _data;
 		this.filter = _filter;
-		this.selectedBee;
-		this.selectedFlower;
+		this.selected
 		this.initVis();
 	}
 
+/*TO DO: 
+
+IMPLEMENT SELECTION
+FILTER OUT UNDEFINED COLOR
+
+*/
 	initVis() {
 		let vis = this;
 		

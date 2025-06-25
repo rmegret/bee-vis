@@ -448,3 +448,16 @@ async function show_visualization() {
 	show_barcharts();
 	show_patchview();
 }
+
+
+
+/*
+
+TO DO:
+
+IMPLEMENT FULL VIEW WITH ALL 4 VIS
+IMPLEMENT SELECTION FILTERING
+CROSS VIS INTERACTIVITY
+GALLERY (VIS WITH BEE PICTURES AND VERY SIMPLE INTERACTIVITY)
+
+*/
