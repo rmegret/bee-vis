@@ -2,13 +2,14 @@ class Barchart {
 	constructor(_config, _data, _filter) {
 		this.config = {
 			parentElement: _config.parentElement,
-			containerWidth: 1600,
+			containerWidth: 800,
 			containerHeight: 600,
 			margin: {top: 20, right: 20, bottom: 40, left:80},	
 		};
 		this.data = _data;
 		this.filter = _filter;
-		this.selected
+		this.selectedBees = [];
+		this.selectedFlowers = [];
 		this.initVis();
 	}
 
@@ -50,7 +51,7 @@ FILTER OUT UNDEFINED COLOR
 				)].sort((a, b) => a - b)
 			)
 			.range([0, vis.width])
-			.padding(0.2);
+			.padding(0.1)
 		
 		//Generate y scale based on the max total duration
 		vis.yScale = d3.scaleLinear()
@@ -86,7 +87,7 @@ FILTER OUT UNDEFINED COLOR
 			.attr('class', 'x-label')
 			.attr('text-anchor', 'end')
 			.attr('x', 35)
-			.attr('y', vis.height + 25)
+			.attr('y', vis.height + 30)
 			.text(vis.filter.charAt(0).toUpperCase() + vis.filter.slice(1)) //Uppercase the string for the currently selected filter
 	
 		vis.chartArea.append('text')
@@ -98,10 +99,10 @@ FILTER OUT UNDEFINED COLOR
 			.attr("transform", "rotate(-90)")
 			.text("Aggregrated Duration of Visits")
 
-		vis.updateVis();
+		vis.updateVis(vis.selected);
 	}
 	
-	updateVis() {
+	updateVis(selected) {
 		let vis = this;
 
 		//Update based on new data
@@ -134,7 +135,7 @@ FILTER OUT UNDEFINED COLOR
 			.attr('y', d => vis.yScale(d[1].totalDuration))
 			.attr('width', vis.xScale.bandwidth())
 			.attr('height', d => vis.height - vis.yScale(d[1].totalDuration))
-			.style('fill', d => d[1].color)
+			.style('fill', d => d3.color(d[1].color))
 			.style('stroke', '#333')
 			.on('mouseover', (event, d) => {
 				vis.tooltip.style('visibility', 'visible')

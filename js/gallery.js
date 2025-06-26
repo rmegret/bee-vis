@@ -2,9 +2,9 @@ class Gallery {
     constructor(_config, _data) {
         this.config = {
             parentElement: _config.parentElement,
-            containerWidth: 800,
-            containerHeight: 600,
-            margin: {top: 20, right: 20, bottom: 20, left: 20},
+            containerWidth: 1650,
+            containerHeight: 400,
+            margin: {top: 20, right: 20, bottom: 20, left: 75},
             beeSize: 50,
             colorSize: 30
         };
@@ -15,14 +15,28 @@ class Gallery {
     }
 
     initVis() {
-        // existing implementation
-    }
+   		let vis = this; 
 
-    getSelectedBees() {
-        return Array.from(this.selectedBees);
-    }
+		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
+		vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
 
-    getSelectedColors() {
-        return Array.from(this.selectedColors);
-    }
+		vis.xScale = scaleBand()
+			.domain(
+			[...new Set(vis.data
+				.map(d => d.bee_id)
+			)].sort((a,b) => a - b)
+		)
+		.range([0, vis.width]);
+
+	}
+
+    updateVis() {
+    	let vis = this;
+
+	}
+
+    renderVis() {
+    	let vis = this;
+
+	}
 }

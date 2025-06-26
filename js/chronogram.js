@@ -2,7 +2,7 @@ class Chronogram {
 	constructor(_config, _data) {
 		this.config = {
 			  parentElement: _config.parentElement,
-			  containerWidth: 1650,
+			  containerWidth: 800,
 			  containerHeight: 800,
 			  margin: {top: 50, right: 20, bottom: 20, left: 75},
 			};
@@ -30,7 +30,7 @@ class Chronogram {
 					.map(d => d.bee_id)
 				)].sort((a, b) => a - b)
 			)
-			.range([vis.height, 0])
+			.range([vis.height, 0]);
 
 
 		vis.xAxis = d3.axisBottom(vis.xScale)
@@ -49,12 +49,12 @@ class Chronogram {
 
 		vis.chartArea.append('g')
 			.attr('class', 'y-axis')
-			.call(vis.yAxis) 
+			.call(vis.yAxis);
 
 		vis.chartArea.append('g')
 			.attr('class', 'x-axis')
 			.attr('transform', `translate(0, ${vis.height})`)
-			.call(vis.xAxis)
+			.call(vis.xAxis);
 
 		vis.chartArea.selectAll('.bee-color-rect')
 		  .data(vis.yScale.domain())
@@ -151,15 +151,16 @@ class Chronogram {
 				exit => exit.remove()
 			);
 		});
-			if (!vis.tooltip) {
-					vis.tooltip = d3.select('body').append('div')
-					  .attr('class', 'tooltip')
-					  .style('position', 'absolute')
-					  .style('visibility', 'hidden')
-					  .style('background', 'white')
-					  .style('border', '1px solid #ccc')
-					  .style('padding', '5px')
-					  .style('font-size', '12px');  
-				}
+		
+		if (!vis.tooltip) {
+			vis.tooltip = d3.select('body').append('div')
+				.attr('class', 'tooltip')
+				.style('position', 'absolute')
+				.style('visibility', 'hidden')
+				.style('background', 'white')
+				.style('border', '1px solid #ccc')
+				.style('padding', '5px')
+				.style('font-size', '12px');  
+		}
 	}
 }

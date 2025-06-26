@@ -353,19 +353,60 @@ async function show_chronogram() {
 	var chronoDiv = d3.select('#chronogram')
   	chronoDiv.html('')
 
-	var galleryDiv = d3.select('#gallery')
-	galleryDiv.html('')
-
+	
 	const chronogram = new Chronogram({
 		parentElement: '#main',
 	}, mergedData);
+	
+	show_gallery();
 }
 
 async function show_gallery() {
 
-	
-}
+	promise = Promise.all(
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv')
+		])
+	const [tracks, bees] = await promise
 
+	//New image map to sort images by bee id	
+	const imageMap = new Map() 
+
+	//Take all tracks and make a map that groups all images by bee id
+	tracks.forEach(function (track) {
+		//Skip images for bee id = 0
+		if (track.bee_id == 0) {
+			return;
+		}
+		//Skip tracks without an image
+		else if (track.crop_filename == '') { 
+			return;
+		}
+		//If a bee id is already registered, push into the image array	
+		else if(imageMap.has(track.bee_id)) {
+			imageMap.get(track.bee_id).push(track.crop_filename);
+		}
+		//If bee if has not been seen, set new bee id with first image
+		else {
+			imageMap.set(track.bee_id, [track.crop_filename]);
+		}
+	});
+	
+	//Merge the bee data and the array of images for each bee
+	const mergedData = bees.map(d => ({
+		...d,
+		images: imageMap.get(d.bee_id)
+	}));
+
+	console.log(mergedData);
+
+	var galleryDiv = d3.select('#gallery')
+		galleryDiv.html('')
+
+	const gallery = new Gallery({
+		parentElement: '#gallery',
+	}, mergedData);
+}
 
 async function show_barcharts() {
 
@@ -448,7 +489,6 @@ async function show_visualization() {
 	show_barcharts();
 	show_patchview();
 }
-
 
 
 /*
