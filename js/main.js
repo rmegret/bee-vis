@@ -369,6 +369,8 @@ async function show_gallery() {
 		])
 	const [tracks, bees] = await promise
 
+	console.log(tracks);
+
 	//New image map to sort images by bee id	
 	const imageMap = new Map() 
 
@@ -390,6 +392,7 @@ async function show_gallery() {
 		else {
 			imageMap.set(track.bee_id, [track.crop_filename]);
 		}
+		
 	});
 	
 	//Merge the bee data and the array of images for each bee

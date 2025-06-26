@@ -2,9 +2,9 @@ class Chronogram {
 	constructor(_config, _data) {
 		this.config = {
 			  parentElement: _config.parentElement,
-			  containerWidth: 800,
-			  containerHeight: 800,
-			  margin: {top: 50, right: 20, bottom: 20, left: 75},
+			  containerWidth: 850,
+			  containerHeight: 600,
+			  margin: {top: 30, right: 20, bottom: 20, left: 75},
 			};
 			this.data = _data;
 			this.selectedTracks = [];
