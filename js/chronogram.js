@@ -3,7 +3,7 @@ class Chronogram {
 		this.config = {
 			  parentElement: _config.parentElement,
 			  containerWidth: 850,
-			  containerHeight: 600,
+			  containerHeight: 400,
 			  margin: {top: 30, right: 20, bottom: 20, left: 75},
 			};
 			this.data = _data;

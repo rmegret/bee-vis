@@ -265,11 +265,9 @@ async function show_video_frame() {
   frame_filename = '/data/flowerpatch/flowerpatch_20240606_11h04_frame_0.jpg'
 
   // Clear Main
-  var mainDiv = d3.select('#main')
-  mainDiv.html('')
+	clear_main();
 
-  var containerDiv = d3.select('.container')
-  containerDiv.html('')
+	clear_vis_container();
 
   // Add as a simple image tag
   // mainDiv.append('p').text('Plain <img> (cannot paint on it)')
@@ -347,18 +345,11 @@ async function show_chronogram() {
   	
 	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
 	
-	var mainDiv = d3.select('#main')
-  	mainDiv.html('')
-
-	var chronoDiv = d3.select('#chronogram')
-  	chronoDiv.html('')
-
 	
 	const chronogram = new Chronogram({
-		parentElement: '#main',
+		parentElement: '#chronogram',
 	}, mergedData);
 	
-	show_gallery();
 }
 
 async function show_gallery() {
@@ -368,8 +359,6 @@ async function show_gallery() {
 		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv')
 		])
 	const [tracks, bees] = await promise
-
-	console.log(tracks);
 
 	//New image map to sort images by bee id	
 	const imageMap = new Map() 
@@ -400,11 +389,8 @@ async function show_gallery() {
 		...d,
 		images: imageMap.get(d.bee_id)
 	}));
-
+	
 	console.log(mergedData);
-
-	var galleryDiv = d3.select('#gallery')
-		galleryDiv.html('')
 
 	const gallery = new Gallery({
 		parentElement: '#gallery',
@@ -438,16 +424,10 @@ async function show_barcharts() {
 
 	
 	//Filters can be bee_id, flower_id, bee_color, flower_color
-	let filter = "bee_id";
-
-	var mainDiv = d3.select('#main')
-  	mainDiv.html('')
-	
-	var beeBarDiv = d3.select('#bee_bar')
-  	beeBarDiv.html('')
+	let filter = "flower_id";
 
 	const barchart = new Barchart({
-		parentElement: '#main',
+		parentElement: '#bar',
 	}, mergedData, filter);
 
 }
@@ -476,23 +456,41 @@ async function show_patchview() {
     	flower.visit_count = visitCount.get(+flower.flower_id) || 0;
   	});
 
-	var mainDiv = d3.select('#main')
-  	mainDiv.html('')
-
-	var patchDiv = d3.select('#patchview')
-  	patchDiv.html('')
-
   	const patchview = new FlowerPatch({
-		parentElement: '#main'
+		parentElement: '#patchview'
 	}, flowers, visits);
 }
 
 async function show_visualization() {
+	
+	clear_main();
+	clear_vis_container();
+
 	show_chronogram();
+	show_gallery();
 	show_barcharts();
 	show_patchview();
 }
 
+
+async function clear_main() {
+	var mainDiv = d3.select('#main');
+  	mainDiv.html('');
+}
+
+async function clear_vis_container() {
+	var chronogramContainer = d3.select('#chronogram');
+	chronogramContainer.html('');
+
+	var patchviewContainer = d3.select('#patchview');
+	patchviewContainer.html('');
+
+	var galleryContainer = d3.select('#gallery');
+	galleryContainer.html('');
+
+	var barContainer = d3.select('#bar');
+	barContainer.html('');
+}
 
 /*
 
@@ -502,5 +500,6 @@ IMPLEMENT FULL VIEW WITH ALL 4 VIS
 IMPLEMENT SELECTION FILTERING
 CROSS VIS INTERACTIVITY
 GALLERY (VIS WITH BEE PICTURES AND VERY SIMPLE INTERACTIVITY)
+REPLACE DIV CLEARING WITH CLEAR HTML COMPONENT FUNCTIONS
 
 */

@@ -23,12 +23,12 @@ class FlowerPatch {
         vis.mainDiv.append('p').text('Flower Patch Visualization');
         vis.mainDiv.append('div')
             .attr('id', 'legend-container')
-            .style('width', '100%')
+            .style('width', '50%')
             .style('margin', '20px 0');
 
         vis.mainDiv.append('div')
             .attr('id', 'bee-path-container')
-            .style('width', '100%')
+            .style('width', '50%')
             .style('margin', '20px 0');
 
         vis.flexDiv = vis.mainDiv.append('div')

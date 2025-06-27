@@ -2,9 +2,9 @@ class Barchart {
 	constructor(_config, _data, _filter) {
 		this.config = {
 			parentElement: _config.parentElement,
-			containerWidth: 800,
-			containerHeight: 600,
-			margin: {top: 20, right: 20, bottom: 40, left:80},	
+			containerWidth: 850,
+			containerHeight: 400,
+			margin: {top: 20, right: 20, bottom: 40, left:75},	
 		};
 		this.data = _data;
 		this.filter = _filter;

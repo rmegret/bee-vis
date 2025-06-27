@@ -6,7 +6,7 @@
     <link rel="icon" href="data:;base64,iVBORwOKGO=" />
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body onload="show_chronogram()">
+<body onload="show_visualization()">
     <!-- Add HTML content, SVG drawing area, ... -->
     
     <!-- D3 bundle -->
@@ -33,10 +33,10 @@
     <div>Combined data:
     <button onclick="show_visits_with_bee_labels_table()">Visits with Bee Information</button>
     <button onclick="show_video_frame()">Video Frame with Flowers</button>
-	<button onclick="show_barcharts()">Bar Charts</button>
-	<button onclick="show_chronogram()">Chronogram</button>
-	<button onclick="show_patchview()">Flowerpatch View</button>
- <!--	<button onclick="show_visualization()">Visualization</button> -->
+<!--	<button onclick="show_barcharts()">Bar Charts</button> -->
+<!--	<button onclick="show_chronogram()">Chronogram</button> -->
+<!--	<button onclick="show_patchview()">Flowerpatch View</button> -->
+ 	<button onclick="show_visualization()">Visualization</button>
 
 	</div>
 
@@ -45,10 +45,13 @@
     <div id="main"></div>
 
 	<div class="container">
-		<div id="chronogram"></div>
-		<div id="patchview"></div>
-		<div id="gallery"></div>
-		<div id="bar"></div>
-	</div>
+<!--		<div class="row">
+			<div class="column"> -->
+				<div id="chronogram" class="visDiv"></div>
+				<div id="bar" class="visDiv"></div>	
+				<div id="gallery" class="visDiv"></div>
+<!--			</div> -->
+			<div id="patchview" class="visDiv"></div>
+<!--		</div> -->
 </body>
 </html>
