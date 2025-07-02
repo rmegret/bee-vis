@@ -1,7 +1,6 @@
 // Global variable to help debugging
 var gdebug = {}
 
-
 // UTILITARY FUNCTIONS
 
 // Converts in place specified columns of data rows into numbers
@@ -13,6 +12,219 @@ function convert_columns_to_number(data, columns) {
     }
   }
 }
+
+
+async function show_chronogram() {
+
+	promise = Promise.all( 
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
+		])
+	const [visits, bees, flowers] = await promise
+
+	// Create lookup maps for beeColors and flowerColors
+	const beeColorMap = new Map(bees.map(d => [d.bee_id, d.paint_color]));
+	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.color]));
+	
+	// Merge data into visits
+	const mergedData = visits.map(d => ({
+		...d,
+		beeColor: beeColorMap.get(d.bee_id),
+		flowerColor: flowerColorMap.get(d.flower_id),
+		selected: false
+	}));
+  	
+	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
+	
+	
+	const chronogram = new Chronogram({
+		parentElement: '#chronogram',
+	}, mergedData);
+	
+}
+
+
+async function show_gallery() {
+
+	promise = Promise.all(
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv')
+		])
+	const [tracks, bees] = await promise
+
+	//New image map to sort images by bee id	
+	const imageMap = new Map() 
+
+	//Take all tracks and make a map that groups all images by bee id
+	tracks.forEach(function (track) {
+		//Skip images for bee id = 0
+		if (track.bee_id == 0) {
+			return;
+		}
+		//Skip tracks without an image
+		else if (track.crop_filename == '') { 
+			return;
+		}
+		//If a bee id is already registered, push into the image array	
+		else if(imageMap.has(track.bee_id)) {
+			imageMap.get(track.bee_id).push(track.crop_filename);
+		}
+		//If bee if has not been seen, set new bee id with first image
+		else {
+			imageMap.set(track.bee_id, [track.crop_filename]);
+		}
+		
+	});
+	
+	//Merge the bee data and the array of images for each bee
+	const mergedData = bees.map(d => ({
+		...d,
+		images: imageMap.get(d.bee_id)
+	}));
+	
+	console.log(mergedData);
+
+	const gallery = new Gallery({
+		parentElement: '#gallery',
+	}, mergedData);
+}
+
+
+async function show_barcharts() {
+
+	promise = Promise.all(
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
+		])
+	const [visits, bees, flowers] = await promise
+
+	// Create lookup maps for beeColors and flowerColors
+	const beeColorMap = new Map(bees.map(d => [d.bee_id, d.paint_color]));
+	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.color]));	
+	
+	const mergedData = visits.map(d => ({
+		...d,
+		bee_color: beeColorMap.get(d.bee_id),
+		flower_color: flowerColorMap.get(d.flower_id)
+	}));
+
+	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
+	
+
+	//Add a 'duration' attribute to every visit
+	mergedData.forEach(d => d.duration = d.end_frame - d.start_frame);	
+
+	
+	//Filters can be bee_id, flower_id, bee_color, flower_color
+	let filter = "bee_id";
+
+	const barchart = new Barchart({
+		parentElement: '#bar',
+	}, mergedData, filter);
+
+}
+
+
+async function show_patchview() {
+
+	promise = Promise.all(
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv')
+		])
+	const [flowers, visits] = await promise
+
+	convert_columns_to_number(visits, ['flower_id', 'bee_id']);
+
+  	// visits by flower_id
+  	const filteredVisits = visits.filter(d => +d.flower_id !== 0)
+  
+  	const visitCount = d3.rollup(
+    	filteredVisits,
+    	v => v.length,
+    	d => d.flower_id
+  	);
+
+  	// add visits to flowers dataset (will be the data used for heatmap)
+  	flowers.forEach(flower => {
+    	flower.visit_count = visitCount.get(+flower.flower_id) || 0;
+  	});
+
+  	const patchview = new FlowerPatch({
+		parentElement: '#patchview'
+	}, flowers, visits);
+}
+
+
+async function show_visualization() {
+	
+	clear_main();
+	clear_vis_container();
+
+	show_chronogram();
+	show_gallery();
+	show_barcharts();
+	show_patchview();
+
+
+}
+
+
+async function update_visualizations(selected) {
+
+
+
+}
+
+
+async function clear_main() {
+	var mainDiv = d3.select('#main');
+  	mainDiv.html('');
+}
+
+
+async function clear_vis_container() {
+	var chronogramContainer = d3.select('#chronogram');
+	chronogramContainer.html('');
+
+	var patchviewContainer = d3.select('#patchview');
+	patchviewContainer.html('');
+
+	var galleryContainer = d3.select('#gallery');
+	galleryContainer.html('');
+
+	var barContainer = d3.select('#bar');
+	barContainer.html('');
+}
+
+
+
+/*
+TO DO:
+
+IMPLEMENT SELECTION FILTERING
+CROSS VIS INTERACTIVITY
+GALLERY (VIS WITH BEE PICTURES AND VERY SIMPLE INTERACTIVITY)
+REPLACE DIV CLEARING WITH CLEAR HTML COMPONENT FUNCTIONS
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 // Convert a flat list of rows into an indexed dictionnary
 // [{a:1, b:30}, {a:10, b:40}] => {1: {a:1, b:30}, 10: {a:10, b:40}}
 // The new structure points to the old structure, it just index it
@@ -321,185 +533,4 @@ async function show_video_frame() {
       //.style('dominant-baseline','middle')
       .attr('dy','0.35em')
   }
-
-async function show_chronogram() {
-
-	promise = Promise.all( 
-		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
-		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv'),
-		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
-		])
-	const [visits, bees, flowers] = await promise
-
-	// Create lookup maps for beeColors and flowerColors
-	const beeColorMap = new Map(bees.map(d => [d.bee_id, d.paint_color]));
-	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.color]));
-	
-	// Merge data into visits
-	const mergedData = visits.map(d => ({
-		...d,
-		beeColor: beeColorMap.get(d.bee_id),
-		flowerColor: flowerColorMap.get(d.flower_id),
-		selected: false
-	}));
-  	
-	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
-	
-	
-	const chronogram = new Chronogram({
-		parentElement: '#chronogram',
-	}, mergedData);
-	
-}
-
-async function show_gallery() {
-
-	promise = Promise.all(
-		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv'),
-		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv')
-		])
-	const [tracks, bees] = await promise
-
-	//New image map to sort images by bee id	
-	const imageMap = new Map() 
-
-	//Take all tracks and make a map that groups all images by bee id
-	tracks.forEach(function (track) {
-		//Skip images for bee id = 0
-		if (track.bee_id == 0) {
-			return;
-		}
-		//Skip tracks without an image
-		else if (track.crop_filename == '') { 
-			return;
-		}
-		//If a bee id is already registered, push into the image array	
-		else if(imageMap.has(track.bee_id)) {
-			imageMap.get(track.bee_id).push(track.crop_filename);
-		}
-		//If bee if has not been seen, set new bee id with first image
-		else {
-			imageMap.set(track.bee_id, [track.crop_filename]);
-		}
-		
-	});
-	
-	//Merge the bee data and the array of images for each bee
-	const mergedData = bees.map(d => ({
-		...d,
-		images: imageMap.get(d.bee_id)
-	}));
-	
-	console.log(mergedData);
-
-	const gallery = new Gallery({
-		parentElement: '#gallery',
-	}, mergedData);
-}
-
-async function show_barcharts() {
-
-	promise = Promise.all(
-		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
-		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv'),
-		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
-		])
-	const [visits, bees, flowers] = await promise
-
-	// Create lookup maps for beeColors and flowerColors
-	const beeColorMap = new Map(bees.map(d => [d.bee_id, d.paint_color]));
-	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.color]));	
-	
-	const mergedData = visits.map(d => ({
-		...d,
-		bee_color: beeColorMap.get(d.bee_id),
-		flower_color: flowerColorMap.get(d.flower_id)
-	}));
-
-	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
-	
-
-	//Add a 'duration' attribute to every visit
-	mergedData.forEach(d => d.duration = d.end_frame - d.start_frame);	
-
-	
-	//Filters can be bee_id, flower_id, bee_color, flower_color
-	let filter = "flower_id";
-
-	const barchart = new Barchart({
-		parentElement: '#bar',
-	}, mergedData, filter);
-
-}
-
-async function show_patchview() {
-
-	promise = Promise.all(
-		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv'),
-		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv')
-		])
-	const [flowers, visits] = await promise
-
-	convert_columns_to_number(visits, ['flower_id', 'bee_id']);
-
-  	// visits by flower_id
-  	const filteredVisits = visits.filter(d => +d.flower_id !== 0)
-  
-  	const visitCount = d3.rollup(
-    	filteredVisits,
-    	v => v.length,
-    	d => d.flower_id
-  	);
-
-  	// add visits to flowers dataset (will be the data used for heatmap)
-  	flowers.forEach(flower => {
-    	flower.visit_count = visitCount.get(+flower.flower_id) || 0;
-  	});
-
-  	const patchview = new FlowerPatch({
-		parentElement: '#patchview'
-	}, flowers, visits);
-}
-
-async function show_visualization() {
-	
-	clear_main();
-	clear_vis_container();
-
-	show_chronogram();
-	show_gallery();
-	show_barcharts();
-	show_patchview();
-}
-
-
-async function clear_main() {
-	var mainDiv = d3.select('#main');
-  	mainDiv.html('');
-}
-
-async function clear_vis_container() {
-	var chronogramContainer = d3.select('#chronogram');
-	chronogramContainer.html('');
-
-	var patchviewContainer = d3.select('#patchview');
-	patchviewContainer.html('');
-
-	var galleryContainer = d3.select('#gallery');
-	galleryContainer.html('');
-
-	var barContainer = d3.select('#bar');
-	barContainer.html('');
-}
-
-/*
-
-TO DO:
-
-IMPLEMENT FULL VIEW WITH ALL 4 VIS
-IMPLEMENT SELECTION FILTERING
-CROSS VIS INTERACTIVITY
-GALLERY (VIS WITH BEE PICTURES AND VERY SIMPLE INTERACTIVITY)
-REPLACE DIV CLEARING WITH CLEAR HTML COMPONENT FUNCTIONS
-
 */

@@ -30,6 +30,9 @@ FILTER OUT UNDEFINED COLOR
 		vis.fillColor = vis.filterArr[0] + '_color';
 
 		vis.data = vis.data.filter(d => d[vis.filter] !== 0);
+
+		vis.title = d3.select(vis.config.parentElement).append('h2')
+			.text(`Aggregated Duration of Visits by ${vis.filterArr[0].charAt(0).toUpperCase() + vis.filterArr[0].slice(1) + " " + vis.filterArr[1].charAt(0).toUpperCase() + vis.filterArr[1].slice(1)}`)
 	
 		//New array with flower_id, bee_id, flower_color, or bee_color as key
 		//and aggregated durations of visits, visit count, and color as values		
@@ -152,6 +155,12 @@ FILTER OUT UNDEFINED COLOR
 					.style('left', `${event.pageX + 10}px`)
 			})
 			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'))
+			.on('click', (event, d) => {
+				
+
+			});
+
+		bars.exit().remove();
 
 		if (!vis.tooltip) {
 			vis.tooltip = d3.select('body').append('div')

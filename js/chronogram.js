@@ -14,6 +14,9 @@ class Chronogram {
 	initVis() {
 		let vis = this;
 
+		vis.title = d3.select(vis.config.parentElement).append('h2')
+			.text('Visit Frame Durations by Bee Id');
+
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
     	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
 
@@ -43,7 +46,7 @@ class Chronogram {
 		vis.svg = d3.select(vis.config.parentElement).append('svg')
 			.attr('width', vis.config.containerWidth)
 			.attr('height', vis.config.containerHeight);
-		
+
 		vis.chartArea = vis.svg.append('g')
 			.attr('transform', `translate(${vis.config.margin.left},${vis.config.margin.top})`);
 
@@ -55,27 +58,11 @@ class Chronogram {
 			.attr('class', 'x-axis')
 			.attr('transform', `translate(0, ${vis.height})`)
 			.call(vis.xAxis);
-
-		vis.chartArea.selectAll('.bee-color-rect')
-		  .data(vis.yScale.domain())
-		  .enter()
-		  .append('rect')
-			.attr('class', 'bee-color-rect')
-			.attr('x', -vis.config.margin.left + 10)
-			.attr('y', d => vis.yScale(d) + vis.yScale.bandwidth() / 4 + 4)
-			.attr('width', 10)
-			.attr('stroke', '#333')
-			.attr('stroke-width', 0.5)
-			.attr('height', vis.yScale.bandwidth() / 4)
-			.attr('fill', d => {
-			  const colorFetch = vis.data.find(row => row.bee_id === d);
-			  return colorFetch.beeColor;
-			});
-
+	
 		vis.updateVis();
 	}
 
-	updateVis() {
+	updateVis(selected) {
 		let vis = this;
 
 		vis.groupedData = d3.groups(vis.data, d => d.bee_id); //Group visits by bee id
@@ -151,6 +138,22 @@ class Chronogram {
 				exit => exit.remove()
 			);
 		});
+
+		vis.chartArea.selectAll('.bee-color-rect')
+				  .data(vis.yScale.domain())
+				  .enter()
+				  .append('rect')
+					.attr('class', 'bee-color-rect')
+					.attr('x', -vis.config.margin.left + 10)
+					.attr('y', d => vis.yScale(d) + vis.yScale.bandwidth() / 4 + 4)
+					.attr('width', 10)
+					.attr('stroke', '#333')
+					.attr('stroke-width', 0.5)
+					.attr('height', vis.yScale.bandwidth() / 4)
+					.attr('fill', d => {
+					  const colorFetch = vis.data.find(row => row.bee_id === d);
+					  return colorFetch.beeColor;
+					});
 		
 		if (!vis.tooltip) {
 			vis.tooltip = d3.select('body').append('div')

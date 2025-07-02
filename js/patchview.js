@@ -20,20 +20,21 @@ class FlowerPatch {
         let vis = this;
 
         //---Create and Add containers---
-        vis.mainDiv.append('p').text('Flower Patch Visualization');
+        vis.mainDiv.append('h2').text('Flower Patch Visualization').style('margin', '20px');
         vis.mainDiv.append('div')
             .attr('id', 'legend-container')
             .style('width', '50%')
-            .style('margin', '20px 0');
+            .style('margin', '20px');
 
         vis.mainDiv.append('div')
             .attr('id', 'bee-path-container')
             .style('width', '50%')
-            .style('margin', '20px 0');
+            .style('margin', '20px');
 
         vis.flexDiv = vis.mainDiv.append('div')
             .attr('id', 'flex-container')
             .style('display', 'flex')
+			.style('margin', '20px')
             .style('align-items', 'flex-start');
 
         // ---Add Elements to containers---
