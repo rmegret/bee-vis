@@ -10,8 +10,10 @@ class Barchart {
 		this.div = this.config.parentElement;
 		this.xFilters = ['bee_id','flower_id','flower_color'];
 		this.yFilters = ['total_duration', 'visit_count'];
+		this.sortFilters = ['default', 'ascending', 'descending'];
 		this.selectedXFilter= 'bee_id';
 		this.selectedYFilter = 'total_duration';
+		this.selectedSort = 'default';
 		this.initVis();
 	}
 
@@ -19,6 +21,7 @@ class Barchart {
 TO DO: 
 
 IMPLEMENT SORTING
+	-FUNCTION THAT TAKES SELECTED SORT AS PARAMETER AND SORTS BASED ON IT
 
 */
 	initVis() {
@@ -55,7 +58,17 @@ IMPLEMENT SORTING
 			.data(vis.yFilters)
 			.enter()
 			.append('option')
-			.text(d => `${d.split('_')[0].charAt(0).toUpperCase() + d.split('_')[0].slice(1) + " " + d.split('_')[1].charAt(0).toUpperCase() + d.split("_")[1].slice(1)}`)
+			.text(d => `${d.charAt(0).toUpperCase() + d.split('_')[0].slice(1) + " " + d.split('_')[1].charAt(0).toUpperCase() + d.split("_")[1].slice(1)}`)
+			.attr('value', d => d);
+
+		vis.sortSelector = d3.select(vis.div).append('select')	
+			.attr('id', 'sortSelector');
+
+		vis.sortSelector.selectAll('option')
+			.data(vis.sortFilters)
+			.enter()
+			.append('option')
+			.text(d => `${d.charAt(0).toUpperCase() + d.slice(1)}`)
 			.attr('value', d => d);
 
 		d3.select(vis.div).append('br');
@@ -73,7 +86,7 @@ IMPLEMENT SORTING
 			d => d[vis.selectedXFilter],
 			);
 
-		//Generate x scale based on existing unique ids
+		//Generate x scale based on existing unique ids TO DO: IMPLEMENT SORT SELECTION
 		vis.xScale = d3.scaleBand()
 			.domain(
 				[...new Set(vis.data
@@ -142,6 +155,11 @@ IMPLEMENT SORTING
 			vis.selectedYFilter = event.target.value;
 			vis.updateVis(vis.selected);
 		});	
+		/*d3.select('#sortSelector').on('change', (event) => {
+			vis.selectedYFilter = event.target.value;
+			vis.updateVis(vis.selected);
+		});	
+		*/
 
 		vis.updateVis(vis.selected);
 	}
@@ -160,7 +178,7 @@ IMPLEMENT SORTING
 		d3.select('#y-label').text(`${vis.yFilterSplit[0].charAt(0).toUpperCase() + vis.yFilterSplit[0].slice(1) + " " + vis.yFilterSplit[1].charAt(0).toUpperCase() + vis.yFilterSplit[1].slice(1)}`);
 
 		//Filter out imprecise data
-		vis.data = vis.data.filter(d => d[vis.selectedXFilter] !== 0);	
+		vis.data = vis.data.filter(d => d[vis.selectedXFilter] !== 0);
 		vis.data = vis.data.filter(d => d[vis.selectedXFilter] !== undefined);
 
 		//Update based on new data
@@ -174,9 +192,9 @@ IMPLEMENT SORTING
 			d => d[vis.selectedXFilter],
 			);
 
-		//Update y scale
+		//Update x and y scales TO DO: IMPLEMENT SORT SELECTION
 		vis.yScale.domain([0, d3.max(vis.durations, d => d[1][vis.selectedYFilter])]);
-
+		
 		vis.xScale.domain([...new Set(vis.data.map(d => d[vis.selectedXFilter]))].sort((a, b) => a - b))
 	
 		//Update Axis
@@ -240,6 +258,18 @@ IMPLEMENT SORTING
 				.style('border', '1px solid #ccc')
 				.style('padding', '5px')
 				.style('font-size', '12px');  
+		}
+	}
+	//IMPLEMENT SORT FUNCTION
+	sortVis(a, b) {
+		if(vis.selectedSort == 'ascending') {
+			
+		}
+		else if (vis.selectedSort == 'descending'){
+
+		}
+		else {
+
 		}
 	}
 }
