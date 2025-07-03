@@ -83,7 +83,6 @@ async function show_gallery() {
 		images: imageMap.get(d.bee_id)
 	}));
 	
-	console.log(mergedData);
 
 	const gallery = new Gallery({
 		parentElement: '#gallery',
@@ -112,17 +111,12 @@ async function show_barcharts() {
 
 	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
 	
-
 	//Add a 'duration' attribute to every visit
 	mergedData.forEach(d => d.duration = d.end_frame - d.start_frame);	
-
 	
-	//Filters can be bee_id, flower_id, bee_color, flower_color
-	let filter = "bee_id";
-
 	const barchart = new Barchart({
 		parentElement: '#bar',
-	}, mergedData, filter);
+	}, mergedData);
 
 }
 
@@ -157,7 +151,7 @@ async function show_patchview() {
 }
 
 
-async function show_visualization() {
+async function show_visualization() {	
 	
 	clear_main();
 	clear_vis_container();
@@ -166,7 +160,6 @@ async function show_visualization() {
 	show_gallery();
 	show_barcharts();
 	show_patchview();
-
 
 }
 
@@ -179,12 +172,14 @@ async function update_visualizations(selected) {
 
 
 async function clear_main() {
+
 	var mainDiv = d3.select('#main');
   	mainDiv.html('');
 }
 
 
 async function clear_vis_container() {
+
 	var chronogramContainer = d3.select('#chronogram');
 	chronogramContainer.html('');
 
@@ -205,8 +200,7 @@ TO DO:
 
 IMPLEMENT SELECTION FILTERING
 CROSS VIS INTERACTIVITY
-GALLERY (VIS WITH BEE PICTURES AND VERY SIMPLE INTERACTIVITY)
-REPLACE DIV CLEARING WITH CLEAR HTML COMPONENT FUNCTIONS
+
 */
 
 

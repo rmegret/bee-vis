@@ -15,7 +15,7 @@ class Chronogram {
 		let vis = this;
 
 		vis.title = d3.select(vis.config.parentElement).append('h2')
-			.text('Visit Frame Durations by Bee Id');
+			.text('Visit Durations by Bee Id');
 
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
     	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
