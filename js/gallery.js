@@ -45,8 +45,6 @@ class Gallery {
 			.call(vis.xAxis)
 			.select('path').style('stroke', 'none');
 
-
-
 		vis.updateVis();	
 	}
 
@@ -61,6 +59,18 @@ class Gallery {
 
     renderVis() {
     	let vis = this;
+
+		if (!vis.tooltip) {
+			vis.tooltip = d3.select('body').append('div')
+				.attr('class', 'tooltip')
+				.style('position', 'absolute')
+				.style('height', 'auto')
+				.style('visibility', 'hidden')
+				.style('background', 'white')
+				.style('border', '1px solid #ccc')
+				.style('padding', '5px')
+				.style('font-size', '16px');  
+		}
 
 		const images = vis.chartArea.selectAll('.img')
 			.data(vis.data, d => d.bee_id);
@@ -83,7 +93,7 @@ class Gallery {
 						<strong>Comment:  </strong>${d.comment}<br/>
 					</div>
 					<div>
-						<img src='data/flowerpatch/crops/${d.images[0]} '>
+						<img src='data/flowerpatch/crops/${d.images[0]}'>
 					</div>
 				`);
 			})
@@ -93,18 +103,7 @@ class Gallery {
 					.style('left', `${event.pageX + 10}px`)
 			})
 			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'));
-
-	
-		if (!vis.tooltip) {
-			vis.tooltip = d3.select('body').append('div')
-				.attr('class', 'tooltip')
-				.style('position', 'absolute')
-				.style('visibility', 'hidden')
-				.style('background', 'white')
-				.style('border', '1px solid #ccc')
-				.style('padding', '5px')
-				.style('font-size', '15px');  
-		}
+		
 	}
 }
 
@@ -112,7 +111,6 @@ class Gallery {
 TO DO
 
 ADD SELECTION
-ADD HOVER TOOLTIP INTERACTIVITY WITH ALL BEE DETAILS
 SET UP FILTERING
 SET UP SHOW ALL FOR PICTURES ASSOCIATED TO A BEE
 

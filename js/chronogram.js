@@ -78,6 +78,17 @@ class Chronogram {
 	renderVis() {
 		let vis = this;
 
+		if (!vis.tooltip) {
+			vis.tooltip = d3.select('body').append('div')
+				.attr('class', 'tooltip')
+				.style('position', 'absolute')
+				.style('visibility', 'hidden')
+				.style('background', 'white')
+				.style('border', '1px solid #ccc')
+				.style('padding', '5px')
+				.style('font-size', '12px');  
+		}
+
 		const beeGroup = vis.chartArea.selectAll('.bee-group')
 			.data(vis.groupedData, d => d[0]); // Use bee_id as key
 		
@@ -108,7 +119,8 @@ class Chronogram {
 				.style('stroke', '#333')
 				.style('stroke-width', 2)
 				.on('click', function(event, d) {
-				  	d.selected = !d.selected;
+				  	//IMPLEMENT CROSS INTERACTIVITY
+					d.selected = !d.selected;
 				  	d3.select(this)
 						.style('opacity', d => d.selected ? 1 : 0.5);
 				})
@@ -154,16 +166,5 @@ class Chronogram {
 					  const colorFetch = vis.data.find(row => row.bee_id === d);
 					  return colorFetch.beeColor;
 					});
-		
-		if (!vis.tooltip) {
-			vis.tooltip = d3.select('body').append('div')
-				.attr('class', 'tooltip')
-				.style('position', 'absolute')
-				.style('visibility', 'hidden')
-				.style('background', 'white')
-				.style('border', '1px solid #ccc')
-				.style('padding', '5px')
-				.style('font-size', '12px');  
-		}
 	}
 }

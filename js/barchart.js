@@ -20,7 +20,7 @@ class Barchart {
 /*
 TO DO: 
 
-IMPLEMENT CROSS INTERACTIVITY
+IMPLEMENT CROSS INTERACTIVITY WITH CLICKING
 
 */
 	initVis() {
@@ -40,15 +40,23 @@ IMPLEMENT CROSS INTERACTIVITY
 			.attr('id', 'title')	
 
 		//Initialize selectors for updating chart paramenters	
+		vis.xSelectorLabel = d3.select(vis.div).append('label')
+			.attr('for', 'XSelector')
+			.text('X-Axis Filter: ')	
+
 		vis.xSelector = d3.select(vis.div).append('select')
 			.attr('id', 'xSelector');
-	
+
 		vis.xSelector.selectAll('option')
 			.data(vis.xFilters)
 			.enter()
 			.append('option')
 			.text(d => `${d.split('_')[0].charAt(0).toUpperCase() + d.split('_')[0].slice(1) + " " + d.split('_')[1].charAt(0).toUpperCase() + d.split("_")[1].slice(1)}`)
 			.attr('value', d => d);
+
+		vis.ySelectorLabel = d3.select(vis.div).append('label')
+			.attr('for', 'YSelector')
+			.text(' Y-Axis Filter: ')
 
 		vis.ySelector = d3.select(vis.div).append('select')	
 			.attr('id', 'ySelector');
@@ -59,6 +67,10 @@ IMPLEMENT CROSS INTERACTIVITY
 			.append('option')
 			.text(d => `${d.charAt(0).toUpperCase() + d.split('_')[0].slice(1) + " " + d.split('_')[1].charAt(0).toUpperCase() + d.split("_")[1].slice(1)}`)
 			.attr('value', d => d);
+
+		vis.sortSelectorLabel = d3.select(vis.div).append('label')
+			.attr('for', 'sortSelector')
+			.text(' Sort: ')
 
 		vis.sortSelector = d3.select(vis.div).append('select')	
 			.attr('id', 'sortSelector');
@@ -207,9 +219,11 @@ IMPLEMENT CROSS INTERACTIVITY
 			
 		//Update Axis
 		vis.chartArea.selectAll('g.x-axis')
+			.transition().duration(750)
 			.call(vis.xAxis);
 
 		vis.chartArea.selectAll('g.y-axis')
+			.transition().duration(750)
 			.call(vis.yAxis);
 	
 		vis.renderVis();	
@@ -217,46 +231,6 @@ IMPLEMENT CROSS INTERACTIVITY
 
 	renderVis() {
 		let vis = this;
-
-		const bars = vis.chartArea.selectAll('.visBar')
-			.data(vis.durations, d => d[0]);
-
-		//Append and style bars with interactivity
-		bars.join(
-			enter => enter.append('rect')
-				.attr('class', 'visBar')
-				.merge(bars)
-				.attr('x', d => vis.xScale(d[0]))
-				.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
-				.attr('width', vis.xScale.bandwidth())
-				.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]))
-				.style('fill', d => d3.color(d[1].color))
-				.style('stroke', '#333')
-				.on('mouseover', (event, d) => {
-					vis.tooltip.style('visibility', 'visible')
-					.html(`
-						<strong>${vis.xFilterSplit[0].charAt(0).toUpperCase() + vis.xFilterSplit[0].slice(1)} ID:</strong> ${d[0]}<br/>
-						<strong>Aggregated Duration:</strong> ${d[1].total_duration}<br/>
-						<strong>Visit Count:</strong> ${d[1].visit_count}<br/>
-						<strong>${vis.xFilterSplit[0].charAt(0).toUpperCase() + vis.xFilterSplit[0].slice(1)} Color: </strong> ${d[1].color}<br/>
-					`);
-				})
-				.on('mousemove', event => {
-					vis.tooltip
-						.style('top', `${event.pageY - 10}px`)
-						.style('left', `${event.pageX + 10}px`)
-				})
-				.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'))
-				//IMPLEMENT CLICK INTERACTIVITY
-				.on('click', (event, d) => {
-				}),
-			update => update
-				.attr('x', d => vis.xScale(d[0]))
-				.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
-				.style('fill', d => d3.color(d[1].color)),
-
-			exit => exit.remove()
-		);
 
 		if (!vis.tooltip) {
 			vis.tooltip = d3.select('body').append('div')
@@ -268,5 +242,52 @@ IMPLEMENT CROSS INTERACTIVITY
 				.style('padding', '5px')
 				.style('font-size', '12px');  
 		}
+
+		const bars = vis.chartArea.selectAll('.visBar')
+			.data(vis.durations, d => d[0]);
+
+		//Append and style bars with interactivity
+		bars.join(
+			enter => enter.append('rect')
+				.attr('class', 'visBar')
+				.attr('x', d => vis.xScale(d[0]))
+				.attr('y', d => vis.height)
+				.attr('width', vis.xScale.bandwidth())
+				.attr('height', 0)
+				.style('fill', d => d3.color(d[1].color))
+				.style('stroke', '#333')
+				.call(enter => enter.transition().duration(750)
+					.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
+					.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]))
+				)	
+				.on('mouseover', (event, d) => {
+					vis.tooltip.style('visibility', 'visible')
+					.html(`
+						<strong>${vis.xFilterSplit[0].charAt(0).toUpperCase() + vis.xFilterSplit[0].slice(1)} ID:</strong> ${d[0]}<br/>
+						<strong>Aggregated Duration:</strong> ${d[1].total_duration}<br/>
+						<strong>Visit Count:</strong> ${d[1].visit_count}<br/>
+						<strong>${vis.xFilterSplit[0].charAt(0).toUpperCase() + vis.xFilterSplit[0].slice(1)} Color:</strong> ${d[1].color}<br/>
+					`);
+				})
+				.on('mousemove', event => {
+					vis.tooltip
+						.style('top', `${event.pageY - 10}px`)
+						.style('left', `${event.pageX + 10}px`)
+				})
+				.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'))
+				//IMPLEMENT CLICK INTERACTIVITY
+				.on('click', (event, d) => {
+				}),
+				update => update.transition().duration(750)
+					.attr('x', d => vis.xScale(d[0]))
+					.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
+    				.attr('width', vis.xScale.bandwidth())
+					.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]))
+					.style('fill', d => d3.color(d[1].color)),
+				exit => exit.transition().duration(500)
+					.attr('y', vis.height)
+					.attr('height', 0)
+					.remove()
+		);
 	}
 }
