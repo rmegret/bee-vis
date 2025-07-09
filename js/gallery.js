@@ -9,8 +9,8 @@ class Gallery {
             colorSize: 30
         };
         this.data = _data;
-        this.selectedBees = []
-        this.selectedColors = []
+        this.selectedBees = [];
+        this.selectedColors = [];
         this.initVis();
     }
 
@@ -102,15 +102,26 @@ class Gallery {
 					.style('top', `${event.pageY - 10}px`)
 					.style('left', `${event.pageX + 10}px`)
 			})
-			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'));
-		
+			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'))
+			.on('click', function(event, d) {
+				if (vis.selectedBees.includes(d.bee_id)) {
+					vis.selectedBees = vis.selectedBees.filter(bee => bee != d.bee_id);
+					d3.select(this)
+						.style('filter', 'none')	;
+				}
+				else {
+					vis.selectedBees.push(d.bee_id);
+					d3.select(this)
+						.style('filter', 'drop-shadow(0 0 10px rgba(0, 200, 200, 0.8))');
+				}
+				console.log(vis.selectedBees.includes(d.bee_id));
+			});
 	}
 }
 
 /*
 TO DO
 
-ADD SELECTION
 SET UP FILTERING
 SET UP SHOW ALL FOR PICTURES ASSOCIATED TO A BEE
 

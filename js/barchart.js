@@ -41,7 +41,7 @@ IMPLEMENT CROSS INTERACTIVITY WITH CLICKING
 
 		//Initialize selectors for updating chart paramenters	
 		vis.xSelectorLabel = d3.select(vis.div).append('label')
-			.attr('for', 'XSelector')
+			.attr('for', 'xSelector')
 			.text('X-Axis Filter: ')	
 
 		vis.xSelector = d3.select(vis.div).append('select')
@@ -55,7 +55,7 @@ IMPLEMENT CROSS INTERACTIVITY WITH CLICKING
 			.attr('value', d => d);
 
 		vis.ySelectorLabel = d3.select(vis.div).append('label')
-			.attr('for', 'YSelector')
+			.attr('for', 'ySelector')
 			.text(' Y-Axis Filter: ')
 
 		vis.ySelector = d3.select(vis.div).append('select')	
