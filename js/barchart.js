@@ -20,8 +20,7 @@ class Barchart {
 /*
 TO DO: 
 
-IMPLEMENT SORTING
-	-FUNCTION THAT TAKES SELECTED SORT AS PARAMETER AND SORTS BASED ON IT
+IMPLEMENT CROSS INTERACTIVITY
 
 */
 	initVis() {
@@ -155,11 +154,10 @@ IMPLEMENT SORTING
 			vis.selectedYFilter = event.target.value;
 			vis.updateVis(vis.selected);
 		});	
-		/*d3.select('#sortSelector').on('change', (event) => {
-			vis.selectedYFilter = event.target.value;
+		d3.select('#sortSelector').on('change', (event) => {
+			vis.selectedSort = event.target.value;
 			vis.updateVis(vis.selected);
 		});	
-		*/
 
 		vis.updateVis(vis.selected);
 	}
@@ -191,12 +189,22 @@ IMPLEMENT SORTING
   			}),
 			d => d[vis.selectedXFilter],
 			);
+		
 
-		//Update x and y scales TO DO: IMPLEMENT SORT SELECTION
+		//Update x and y scales
 		vis.yScale.domain([0, d3.max(vis.durations, d => d[1][vis.selectedYFilter])]);
 		
-		vis.xScale.domain([...new Set(vis.data.map(d => d[vis.selectedXFilter]))].sort((a, b) => a - b))
-	
+		// Sort durations based on selected sort option
+		if (vis.selectedSort === 'ascending') {
+			vis.durations.sort((a, b) => d3.ascending(a[1][vis.selectedYFilter], b[1][vis.selectedYFilter]));
+		} else if (vis.selectedSort === 'descending') {
+			vis.durations.sort((a, b) => d3.descending(a[1][vis.selectedYFilter], b[1][vis.selectedYFilter]));
+		} else {
+			vis.durations.sort((a, b) => d3.ascending(a[0], b[0]));
+		}
+
+		vis.xScale.domain(vis.durations.map(d => d[0]));
+			
 		//Update Axis
 		vis.chartArea.selectAll('g.x-axis')
 			.call(vis.xAxis);
@@ -239,6 +247,7 @@ IMPLEMENT SORTING
 						.style('left', `${event.pageX + 10}px`)
 				})
 				.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'))
+				//IMPLEMENT CLICK INTERACTIVITY
 				.on('click', (event, d) => {
 				}),
 			update => update
@@ -258,18 +267,6 @@ IMPLEMENT SORTING
 				.style('border', '1px solid #ccc')
 				.style('padding', '5px')
 				.style('font-size', '12px');  
-		}
-	}
-	//IMPLEMENT SORT FUNCTION
-	sortVis(a, b) {
-		if(vis.selectedSort == 'ascending') {
-			
-		}
-		else if (vis.selectedSort == 'descending'){
-
-		}
-		else {
-
 		}
 	}
 }
