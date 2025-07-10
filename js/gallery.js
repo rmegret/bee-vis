@@ -114,7 +114,14 @@ class Gallery {
 					d3.select(this)
 						.style('filter', 'drop-shadow(0 0 10px rgba(0, 200, 200, 0.8))');
 				}
-				console.log(vis.selectedBees.includes(d.bee_id));
+				//TO DO: SELECT CHRONOGRAM, PATCHVIEW, AND BAR CHART AND PASS selectedBees to their update functions
+				//REFACTOR ALL UPDATE FUNCTIONS TO TAKE BEE ARRAY AS PARAMETER
+
+				//if (gui.barchart.selectedSort == 'bee_id') {
+					//gui.barchart.updateVis(vis.selectedBees);
+				//}
+				//gui.patchview.updateVis(vis.selectedBees);
+				gui.chronogram.updateSelection(vis.selectedBees);
 			});
 	}
 }
@@ -124,5 +131,6 @@ TO DO
 
 SET UP FILTERING
 SET UP SHOW ALL FOR PICTURES ASSOCIATED TO A BEE
+SET UP CROSS INTERACTIVITY
 
 */

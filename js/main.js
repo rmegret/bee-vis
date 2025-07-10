@@ -1,5 +1,5 @@
-// Global variable to help debugging
-var gdebug = {}
+// Global variable for the entire vis
+var gui = {}
 
 // UTILITARY FUNCTIONS
 
@@ -34,14 +34,11 @@ async function show_chronogram() {
 		flowerColor: flowerColorMap.get(d.flower_id),
 		selected: false
 	}));
-  	
-	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);
-	
-	
-	const chronogram = new Chronogram({
+	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);	
+
+	gui.chronogram = new Chronogram({
 		parentElement: '#chronogram',
-	}, mergedData);
-	
+	}, mergedData);	
 }
 
 
@@ -84,7 +81,7 @@ async function show_gallery() {
 	}));
 	
 
-	const gallery = new Gallery({
+	gui.gallery = new Gallery({
 		parentElement: '#gallery',
 	}, mergedData);
 }
@@ -114,10 +111,9 @@ async function show_barcharts() {
 	//Add a 'duration' attribute to every visit
 	mergedData.forEach(d => d.duration = d.end_frame - d.start_frame);	
 	
-	const barchart = new Barchart({
+	gui.barchart = new Barchart({
 		parentElement: '#bar',
 	}, mergedData);
-
 }
 
 
@@ -145,7 +141,7 @@ async function show_patchview() {
     	flower.visit_count = visitCount.get(+flower.flower_id) || 0;
   	});
 
-  	const patchview = new FlowerPatch({
+  	gui.patchview = new FlowerPatch({
 		parentElement: '#patchview'
 	}, flowers, visits);
 }
@@ -160,14 +156,6 @@ async function show_visualization() {
 	show_gallery();
 	show_barcharts();
 	show_patchview();
-
-}
-
-
-async function update_visualizations(selected) {
-
-
-
 }
 
 
@@ -200,6 +188,7 @@ TO DO:
 
 IMPLEMENT SELECTION FILTERING
 CROSS VIS INTERACTIVITY
+REFACTOR PATCHVIEW (SPECIFICALLY UPDATE FUNCTION)
 
 */
 

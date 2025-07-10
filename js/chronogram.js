@@ -62,10 +62,11 @@ class Chronogram {
 		vis.updateVis();
 	}
 
-	updateVis(selected) {
+	updateVis() {
 		let vis = this;
 
-		vis.groupedData = d3.groups(vis.data, d => d.bee_id); //Group visits by bee id
+		//Group visits by bee id
+		vis.groupedData = d3.groups(vis.data, d => d.bee_id);		
 		
 		vis.yScale.domain([...new Set(vis.data.map(d => d.bee_id))].sort((a, b) => a - b));
 		//Update yScale if a different bee range is received.
@@ -73,6 +74,31 @@ class Chronogram {
 		//Update xScale if different tracks with higher or lower end_frame max are received
 		
 		vis.renderVis();
+	}
+
+	updateSelection(selectedBees) {
+		let vis = this;
+					
+		/*TO DO: 
+
+		IMPLEMENT DESELECTING ALL TRACKS OF A BEE WHEN UNCLICKED
+
+		*/
+		selectedBees.forEach(bee => {
+			vis.data.forEach(track => {
+				if (track.bee_id == bee && !vis.selectedTracks.includes(track.track_id)) {
+					vis.selectedTracks.push(track.track_id);
+				}
+				else if (track.bee_id == bee && vis.selectedTracks.includes(track.track_id)) {
+					return;
+				}
+			});
+			
+		});
+
+		
+
+		console.log(vis.selectedTracks);
 	}
 
 	renderVis() {
@@ -111,10 +137,10 @@ class Chronogram {
 				enter => enter.append('rect')
 				.attr('class', 'mark')
 				.attr('x', d => vis.xScale(d.start_frame))
-				.attr('y', vis.yScale.bandwidth() / 2 - 2)				
+				.attr('y', vis.yScale.bandwidth() / 2 - 2)
 				.attr('width', d => vis.xScale(d.end_frame) - vis.xScale(d.start_frame))
 				.attr('fill', d => d.flowerColor)
-				.attr('opacity', d => d.selected ? 1: 0.5)
+				.attr('opacity', d => d.selected ? 1: 0.5) //Change to use selectedTracks
 				.attr('height', 4)
 				.style('stroke', '#333')
 				.style('stroke-width', 2)
@@ -122,7 +148,7 @@ class Chronogram {
 				  	//IMPLEMENT CROSS INTERACTIVITY
 					d.selected = !d.selected;
 				  	d3.select(this)
-						.style('opacity', d => d.selected ? 1 : 0.5);
+						.style('opacity', d => d.selected ? 1 : 0.5); //Change to use selectedTracks
 				})
 				.on('mouseover', (event, d) => {
 					vis.tooltip.style('visibility', 'visible')
@@ -144,8 +170,8 @@ class Chronogram {
 
 			  	update => update
 					.attr('x', d => vis.xScale(d.start_frame))
-					.attr('width', d => vis.xScale(d.end_frame) - vis.xScale(d.start_frame))			  
-					.attr('opacity', d => d.selected ? 1: 0.5),
+					.attr('width', d => vis.xScale(d.end_frame) - vis.xScale(d.start_frame))	  
+					.attr('opacity', d => d.selected ? 1: 0.5), //Change to use selectedTracks
 
 				exit => exit.remove()
 			);
