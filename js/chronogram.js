@@ -31,7 +31,7 @@ class Chronogram {
 			.data(vis.flowerFilters)
 			.enter()
 			.append('option')
-			.text(d => `${d.charAt(0).toUpperCase() + d.slice(1)}`)
+			.text(d => `${d.charAt(0).toUpperCase() + d.slice(1)} Flowers`)
 			.attr('value', d => d);
 
 		d3.select(vis.div).append('br');
@@ -81,6 +81,7 @@ class Chronogram {
 
 		d3.select('#flowerSelector').on('change', (event) => {
 			vis.selectedFlowerFilter = event.target.value;
+			vis.updateVis();
 		});
 
 
@@ -91,8 +92,18 @@ class Chronogram {
 	updateVis() {
 		let vis = this;
 
+		if (vis.selectedFlowerFilter == 'blue') {
+			vis.filteredData = vis.data.filter(d => d.flower_color !== 'white');
+		}
+		else if (vis.selectedFlowerFilter == 'white'){
+			vis.filteredData = vis.data.filter(d => d.flower_color !== 'blue');
+		}
+		else {
+			vis.filteredData = vis.data;
+		}
+
 		//Group visits by bee id
-		vis.groupedData = d3.groups(vis.data, d => d.bee_id);		
+		vis.groupedData = d3.groups(vis.filteredData, d => d.bee_id);		
 		
 		vis.yScale.domain([...new Set(vis.data.map(d => d.bee_id))].sort((a, b) => a - b));
 		//Update yScale if a different bee range is received.
@@ -159,16 +170,16 @@ class Chronogram {
 				.attr('x', d => vis.xScale(d.start_frame))
 				.attr('y', vis.yScale.bandwidth() / 2 - 2)
 				.attr('width', d => vis.xScale(d.end_frame) - vis.xScale(d.start_frame))
-				.attr('fill', d => d.flowerColor)
+				.attr('fill', d => d.flower_color)
 				.attr('opacity', d => {
 					if (vis.selectedTracks.length == 0) {
-						return 1;
+						return 0.8;
 					}
 					else if (vis.selectedTracks.includes(d.track_id)) {
-						return 1;
+						return 1.5;
 					}
 					else {
-						return 0.5;
+						return 0.3;
 					}
 				}) 
 				.attr('height', 4)
@@ -188,7 +199,7 @@ class Chronogram {
 						<strong>Flower ID:</strong> ${d.flower_id}<br/>
 						<strong>Start Frame:</strong> ${d.start_frame}<br/>
 						<strong>End Frame:</strong> ${d.end_frame}<br/>
-						<strong>Flower Color:</strong> ${d.flowerColor}
+						<strong>Flower Color:</strong> ${d.flower_color}
 					`);
 				})
 				.on('mousemove', event => {
@@ -230,7 +241,7 @@ class Chronogram {
 					.attr('height', vis.yScale.bandwidth() / 4)
 					.attr('fill', d => {
 					  const colorFetch = vis.data.find(row => row.bee_id === d);
-					  return colorFetch.beeColor;
+					  return colorFetch.bee_color;
 					})
 					.on('click', (event, d) => {
 					//Implement track selection here	

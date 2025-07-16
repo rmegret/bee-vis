@@ -159,22 +159,22 @@ IMPLEMENT CROSS INTERACTIVITY WITH CLICKING
 		//Event listener for selection filters
 		d3.select('#xSelector').on('change', (event) => {
 			vis.selectedXFilter = event.target.value;
-			vis.updateVis(vis.selected);
+			vis.updateVis();
 		});
 		
 		d3.select('#ySelector').on('change', (event) => {
 			vis.selectedYFilter = event.target.value;
-			vis.updateVis(vis.selected);
+			vis.updateVis();
 		});	
 		d3.select('#sortSelector').on('change', (event) => {
 			vis.selectedSort = event.target.value;
-			vis.updateVis(vis.selected);
+			vis.updateVis();
 		});	
 
-		vis.updateVis(vis.selected);
+		vis.updateVis();
 	}
 	
-	updateVis(selected) {
+	updateVis() {
 		let vis = this;
 
 		//Update filter shorthands for render use

@@ -30,8 +30,8 @@ async function show_chronogram() {
 	// Merge data into visits
 	const mergedData = visits.map(d => ({
 		...d,
-		beeColor: beeColorMap.get(d.bee_id),
-		flowerColor: flowerColorMap.get(d.flower_id),
+		bee_color: beeColorMap.get(d.bee_id),
+		flower_color: flowerColorMap.get(d.flower_id),
 		selected: false
 	}));
 	convert_columns_to_number(mergedData, ['start_frame', 'end_frame', 'bee_id', 'flower_id']);	
