@@ -7,7 +7,10 @@ class Chronogram {
 			  margin: {top: 30, right: 20, bottom: 20, left: 75},
 			};
 			this.data = _data;
+			this.div = this.config.parentElement;
 			this.selectedTracks = [];
+			this.flowerFilters = ['all', 'blue', 'white'];
+			this.selectedFlowerFilter = 'all';
 			this.initVis();
 		}
 
@@ -16,6 +19,23 @@ class Chronogram {
 
 		vis.title = d3.select(vis.config.parentElement).append('h2')
 			.text('Visit Durations by Bee Id');
+
+		vis.flowerSelectorLabel = d3.select(vis.div).append('label')
+			.attr('for', 'flowerSelector')
+			.text('Flower Filter: ')	
+
+		vis.flowerSelector = d3.select(vis.div).append('select')
+			.attr('id', 'flowerSelector');
+
+		vis.flowerSelector.selectAll('option')
+			.data(vis.flowerFilters)
+			.enter()
+			.append('option')
+			.text(d => `${d.charAt(0).toUpperCase() + d.slice(1)}`)
+			.attr('value', d => d);
+
+		d3.select(vis.div).append('br');
+
 
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
     	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
@@ -58,6 +78,12 @@ class Chronogram {
 			.attr('class', 'x-axis')
 			.attr('transform', `translate(0, ${vis.height})`)
 			.call(vis.xAxis);
+
+		d3.select('#flowerSelector').on('change', (event) => {
+			vis.selectedFlowerFilter = event.target.value;
+		});
+
+
 	
 		vis.updateVis();
 	}
@@ -79,26 +105,20 @@ class Chronogram {
 	updateSelection(selectedBees) {
 		let vis = this;
 					
-		/*TO DO: 
+		vis.selectedTracks = [];
 
-		IMPLEMENT DESELECTING ALL TRACKS OF A BEE WHEN UNCLICKED
-
-		*/
 		selectedBees.forEach(bee => {
 			vis.data.forEach(track => {
 				if (track.bee_id == bee && !vis.selectedTracks.includes(track.track_id)) {
 					vis.selectedTracks.push(track.track_id);
 				}
-				else if (track.bee_id == bee && vis.selectedTracks.includes(track.track_id)) {
+				else if (track.bee_id === bee && vis.selectedTracks.includes(track.track_id)) {
 					return;
 				}
-			});
-			
+			});	
 		});
-
-		
-
 		console.log(vis.selectedTracks);
+		vis.renderVis();
 	}
 
 	renderVis() {
@@ -140,16 +160,26 @@ class Chronogram {
 				.attr('y', vis.yScale.bandwidth() / 2 - 2)
 				.attr('width', d => vis.xScale(d.end_frame) - vis.xScale(d.start_frame))
 				.attr('fill', d => d.flowerColor)
-				.attr('opacity', d => d.selected ? 1: 0.5) //Change to use selectedTracks
+				.attr('opacity', d => {
+					if (vis.selectedTracks.length == 0) {
+						return 1;
+					}
+					else if (vis.selectedTracks.includes(d.track_id)) {
+						return 1;
+					}
+					else {
+						return 0.5;
+					}
+				}) 
 				.attr('height', 4)
 				.style('stroke', '#333')
 				.style('stroke-width', 2)
-				.on('click', function(event, d) {
-				  	//IMPLEMENT CROSS INTERACTIVITY
+				/*.on('click', function(event, d) {
+				  	//MOVE THE CLICK INTERACTIVITY TO THE BEE RECTS
 					d.selected = !d.selected;
 				  	d3.select(this)
-						.style('opacity', d => d.selected ? 1 : 0.5); //Change to use selectedTracks
-				})
+						.style('opacity', d => d.selected ? 1 : 0.5);
+				})*/
 				.on('mouseover', (event, d) => {
 					vis.tooltip.style('visibility', 'visible')
 					.html(`
@@ -170,8 +200,18 @@ class Chronogram {
 
 			  	update => update
 					.attr('x', d => vis.xScale(d.start_frame))
-					.attr('width', d => vis.xScale(d.end_frame) - vis.xScale(d.start_frame))	  
-					.attr('opacity', d => d.selected ? 1: 0.5), //Change to use selectedTracks
+					.attr('width', d => vis.xScale(d.end_frame) - vis.xScale(d.start_frame))
+					.attr('opacity', d => {					
+						if (vis.selectedTracks.length == 0) {
+							return 1;
+						}
+						else if (vis.selectedTracks.includes(d.track_id)) {
+							return 1;
+						}
+						else {
+							return 0.5;
+						}
+					}),
 
 				exit => exit.remove()
 			);
@@ -191,6 +231,9 @@ class Chronogram {
 					.attr('fill', d => {
 					  const colorFetch = vis.data.find(row => row.bee_id === d);
 					  return colorFetch.beeColor;
+					})
+					.on('click', (event, d) => {
+					//Implement track selection here	
 					});
 	}
 }
