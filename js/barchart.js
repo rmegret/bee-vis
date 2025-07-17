@@ -18,12 +18,7 @@ class Barchart {
 		this.initVis();
 	}
 
-/*
-TO DO: 
 
-IMPLEMENT CROSS INTERACTIVITY WITH CLICKING
-
-*/
 	initVis() {
 		let vis = this;
 		

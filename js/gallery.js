@@ -45,6 +45,23 @@ class Gallery {
 			.call(vis.xAxis)
 			.select('path').style('stroke', 'none');
 
+		d3.select(vis.config.parentElement).append('br');
+	
+		vis.reset = d3.select(vis.config.parentElement).append('button')
+			.text('Reset')
+			.on('click', () => {
+				vis.selectedBees = [];
+				d3.selectAll('.img')
+					.style('filter', 'none');
+				
+				if (gui.barchart.selectedXFilter == 'bee_id') {
+					gui.barchart.updateSelection(vis.selectedBees);
+				}
+				//gui.patchview.updateVis(vis.selectedBees);
+				gui.chronogram.updateSelection(vis.selectedBees);
+
+			});
+
 		vis.updateVis();	
 	}
 
@@ -114,9 +131,9 @@ class Gallery {
 					d3.select(this)
 						.style('filter', 'drop-shadow(0 0 10px rgba(255, 0, 100, 0.8))');
 				}
-				//TO DO: SELECT PATCHVIEW, AND BAR CHART AND PASS selectedBees to their update functions
+				//TO DO: SELECT PATCHVIEW AND PASS selectedBees to their update functions
 				//REFACTOR ALL UPDATE FUNCTIONS TO TAKE BEE ARRAY AS PARAMETER
-				if (gui.barchart?.selectedXFilter == 'bee_id') {
+				if (gui.barchart.selectedXFilter == 'bee_id') {
 					gui.barchart.updateSelection(vis.selectedBees);
 				}
 				//gui.patchview.updateVis(vis.selectedBees);
@@ -131,6 +148,5 @@ TO DO
 SET UP FILTERING
 SET UP SHOW ALL FOR PICTURES ASSOCIATED TO A BEE
 SET UP CROSS INTERACTIVITY
-RESET BUTTON TO REMOVE SELECTION
 
 */
