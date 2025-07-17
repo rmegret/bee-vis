@@ -8,10 +8,11 @@ class Barchart {
 		};
 		this.data = _data;
 		this.div = this.config.parentElement;
+		this.selectedBees = [];
 		this.xFilters = ['bee_id','flower_id','flower_color'];
 		this.yFilters = ['total_duration', 'visit_count'];
 		this.sortFilters = ['default', 'ascending', 'descending'];
-		this.selectedXFilter= 'bee_id';
+		this.selectedXFilter = 'bee_id';
 		this.selectedYFilter = 'total_duration';
 		this.selectedSort = 'default';
 		this.initVis();
@@ -229,6 +230,22 @@ IMPLEMENT CROSS INTERACTIVITY WITH CLICKING
 		vis.renderVis();	
 	}
 
+	updateSelection(selectedBees) {
+		let vis = this;
+
+		vis.selectedBees = [];
+
+		selectedBees.forEach(bee => {
+			if (!vis.selectedBees.includes(bee)) {
+				vis.selectedBees.push(+bee);
+			}
+			else {
+				return;
+			} 
+		});
+		vis.renderVis();
+	}
+
 	renderVis() {
 		let vis = this;
 
@@ -246,48 +263,82 @@ IMPLEMENT CROSS INTERACTIVITY WITH CLICKING
 		const bars = vis.chartArea.selectAll('.visBar')
 			.data(vis.durations, d => d[0]);
 
-		//Append and style bars with interactivity
-		bars.join(
-			enter => enter.append('rect')
-				.attr('class', 'visBar')
-				.attr('x', d => vis.xScale(d[0]))
-				.attr('y', d => vis.height)
-				.attr('width', vis.xScale.bandwidth())
-				.attr('height', 0)
-				.style('fill', d => d3.color(d[1].color))
-				.style('stroke', '#333')
-				.call(enter => enter.transition().duration(750)
-					.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
-					.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]))
-				)	
-				.on('mouseover', (event, d) => {
-					vis.tooltip.style('visibility', 'visible')
+		bars.exit()
+			.transition().duration(500)
+			.attr('y', vis.height)
+			.attr('height', 0)
+			.remove();
+
+		const barsEnter = bars.enter().append('rect')
+			.attr('class', 'visBar')
+			.attr('x', d => vis.xScale(d[0]))
+			.attr('y', vis.height)
+			.attr('width', vis.xScale.bandwidth())
+			.attr('height', 0)
+			.attr('opacity', d => {
+				if (vis.selectedXFilter != 'bee_id') {
+					return 0.8;
+				}
+				else if (vis.selectedBees.length == 0) {
+					return 0.8;
+				}
+				else if (vis.selectedBees.includes(d[0])) {
+					return 1;
+				}
+				else {
+					return 0.3;
+				}
+			})
+			.style('fill', d => d3.color(d[1].color))
+			.style('stroke', '#333')
+			.on('mouseover', (event, d) => {
+				vis.tooltip.style('visibility', 'visible')
 					.html(`
 						<strong>${vis.xFilterSplit[0].charAt(0).toUpperCase() + vis.xFilterSplit[0].slice(1)} ID:</strong> ${d[0]}<br/>
 						<strong>Aggregated Duration:</strong> ${d[1].total_duration}<br/>
 						<strong>Visit Count:</strong> ${d[1].visit_count}<br/>
 						<strong>${vis.xFilterSplit[0].charAt(0).toUpperCase() + vis.xFilterSplit[0].slice(1)} Color:</strong> ${d[1].color}<br/>
 					`);
-				})
-				.on('mousemove', event => {
-					vis.tooltip
-						.style('top', `${event.pageY - 10}px`)
-						.style('left', `${event.pageX + 10}px`)
-				})
-				.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'))
-				//IMPLEMENT CLICK INTERACTIVITY
-				.on('click', (event, d) => {
-				}),
-				update => update.transition().duration(750)
-					.attr('x', d => vis.xScale(d[0]))
-					.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
-    				.attr('width', vis.xScale.bandwidth())
-					.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]))
-					.style('fill', d => d3.color(d[1].color)),
-				exit => exit.transition().duration(500)
-					.attr('y', vis.height)
-					.attr('height', 0)
-					.remove()
-		);
+			})
+			.on('mousemove', event => {
+				vis.tooltip
+					.style('top', `${event.pageY - 10}px`)
+					.style('left', `${event.pageX + 10}px`)
+			})
+			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'));
+
+		const barsMerged = barsEnter.merge(bars)
+			.attr('opacity', d => {
+				if (vis.selectedXFilter != 'bee_id') {
+					return 1;
+				}
+				else if (vis.selectedBees.length == 0) {
+					return 1;
+				}
+				else if (vis.selectedBees.includes(d[0])) {
+					return 1;
+				}
+				else {
+					return 0.3;
+				}
+			});
+
+		barsMerged.transition().duration(750)
+			.attr('x', d => vis.xScale(d[0]))
+			.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
+			.attr('width', vis.xScale.bandwidth())
+			.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]))
+			.style('fill', d => d3.color(d[1].color));
+
+		barsEnter.transition().duration(750)
+			.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
+			.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]));
+
+		bars.transition().duration(750)
+			.attr('x', d => vis.xScale(d[0]))
+			.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
+			.attr('width', vis.xScale.bandwidth())
+			.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]))
+			.style('fill', d => d3.color(d[1].color));
 	}
 }

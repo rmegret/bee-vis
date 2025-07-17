@@ -83,8 +83,6 @@ class Chronogram {
 			vis.selectedFlowerFilter = event.target.value;
 			vis.updateVis();
 		});
-
-
 	
 		vis.updateVis();
 	}
@@ -128,7 +126,6 @@ class Chronogram {
 				}
 			});	
 		});
-		console.log(vis.selectedTracks);
 		vis.renderVis();
 	}
 
@@ -176,7 +173,7 @@ class Chronogram {
 						return 0.8;
 					}
 					else if (vis.selectedTracks.includes(d.track_id)) {
-						return 1.5;
+						return 1;
 					}
 					else {
 						return 0.3;
@@ -185,12 +182,6 @@ class Chronogram {
 				.attr('height', 4)
 				.style('stroke', '#333')
 				.style('stroke-width', 2)
-				/*.on('click', function(event, d) {
-				  	//MOVE THE CLICK INTERACTIVITY TO THE BEE RECTS
-					d.selected = !d.selected;
-				  	d3.select(this)
-						.style('opacity', d => d.selected ? 1 : 0.5);
-				})*/
 				.on('mouseover', (event, d) => {
 					vis.tooltip.style('visibility', 'visible')
 					.html(`
@@ -243,8 +234,5 @@ class Chronogram {
 					  const colorFetch = vis.data.find(row => row.bee_id === d);
 					  return colorFetch.bee_color;
 					})
-					.on('click', (event, d) => {
-					//Implement track selection here	
-					});
 	}
 }

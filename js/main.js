@@ -39,6 +39,8 @@ async function show_chronogram() {
 	gui.chronogram = new Chronogram({
 		parentElement: '#chronogram',
 	}, mergedData);	
+
+	return true;
 }
 
 
@@ -84,10 +86,12 @@ async function show_gallery() {
 	gui.gallery = new Gallery({
 		parentElement: '#gallery',
 	}, mergedData);
+
+	return true;
 }
 
 
-async function show_barcharts() {
+async function show_barchart() {
 
 	promise = Promise.all(
 		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
@@ -114,6 +118,8 @@ async function show_barcharts() {
 	gui.barchart = new Barchart({
 		parentElement: '#bar',
 	}, mergedData);
+	
+	return true;
 }
 
 
@@ -144,6 +150,8 @@ async function show_patchview() {
   	gui.patchview = new FlowerPatch({
 		parentElement: '#patchview'
 	}, flowers, visits);
+	
+	return true;
 }
 
 
@@ -153,9 +161,10 @@ async function show_visualization() {
 	clear_vis_container();
 
 	show_chronogram();
-	show_gallery();
-	show_barcharts();
+	show_barchart();
 	show_patchview();
+	show_gallery();
+
 }
 
 

@@ -107,19 +107,18 @@ class Gallery {
 				if (vis.selectedBees.includes(d.bee_id)) {
 					vis.selectedBees = vis.selectedBees.filter(bee => bee != d.bee_id);
 					d3.select(this)
-						.style('filter', 'none')	;
+						.style('filter', 'none');
 				}
 				else {
 					vis.selectedBees.push(d.bee_id);
 					d3.select(this)
-						.style('filter', 'drop-shadow(0 0 10px rgba(0, 200, 200, 0.8))');
+						.style('filter', 'drop-shadow(0 0 10px rgba(255, 0, 100, 0.8))');
 				}
-				//TO DO: SELECT CHRONOGRAM, PATCHVIEW, AND BAR CHART AND PASS selectedBees to their update functions
+				//TO DO: SELECT PATCHVIEW, AND BAR CHART AND PASS selectedBees to their update functions
 				//REFACTOR ALL UPDATE FUNCTIONS TO TAKE BEE ARRAY AS PARAMETER
-
-				//if (gui.barchart.selectedSort == 'bee_id') {
-					//gui.barchart.updateVis(vis.selectedBees);
-				//}
+				if (gui.barchart?.selectedXFilter == 'bee_id') {
+					gui.barchart.updateSelection(vis.selectedBees);
+				}
 				//gui.patchview.updateVis(vis.selectedBees);
 				gui.chronogram.updateSelection(vis.selectedBees);
 			});
@@ -132,5 +131,6 @@ TO DO
 SET UP FILTERING
 SET UP SHOW ALL FOR PICTURES ASSOCIATED TO A BEE
 SET UP CROSS INTERACTIVITY
+RESET BUTTON TO REMOVE SELECTION
 
 */
