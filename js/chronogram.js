@@ -142,7 +142,9 @@ class Chronogram {
 
 		vis.groupedData = d3.groups(vis.filteredData, d => d.bee_id);
 		vis.yScale.domain([...new Set(vis.filteredData.map(d => d.bee_id))].sort((a, b) => a - b));
-		vis.xScale.domain([0, d3.max(vis.data, d => d.end_frame)]);
+		vis.xScale.domain([0, vis.maxEndFrame]);
+		vis.svg.transition().duration(0).call(vis.zoom.transform, d3.zoomIdentity);
+		vis.chartArea.select('.x-axis').call(vis.xAxis);		
 		vis.chartArea.select('.y-axis').call(vis.yAxis);
 
 		vis.renderVis();
@@ -277,11 +279,3 @@ class Chronogram {
 			});
 	}
 }
-
-
-/*
-
-REDO without grouped implementation
-
-
-*/
