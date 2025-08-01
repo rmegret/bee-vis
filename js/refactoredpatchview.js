@@ -1,19 +1,84 @@
 class FlowerPatch {
-	constructor(_config, _data, _visits) {
+	constructor(_config, _flowers, _visits) {
     	this.config = {	
         	parentElement: _config.parentElement,
-			svgWidth: 2816,
-        	svgHeight: 2816,
+			containerWidth: 2816,
+        	containerHeight: 2816,
+			margin: {top: 20, right: 20, bottom: 40, left:20},
         	legendWidth: 300,
         	legendHeight: 30,
         	legendMargin: 10,
     	}
-        this.data = _data;
+        this.flowers = _flowers;
         this.visits = _visits;
-        this.mainDiv = d3.select(_config.parentElement);
+        this.div = this.config.parentElement;
         this.initVis();
     }
 
+	initVis() {
+		let vis = this;
+
+		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
+    	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
+		
+		vis.xScale = d3.scaleLinear()
+			.domain()
+			.range();
+
+		vis.yScale = d3.scaleLinear()
+			.domain()
+			.range();
+
+		
+		vis.svg = d3.select(vis.div).append('svg')
+			.attr('width', vis.config.containerWidth)
+			.attr('height', vis.config.containerHeight);
+
+		vis.chartArea = vis.svg.append('g')
+			.attr('transform', `translate(${vis.config.margin.left},${vis.config.margin.top})`);
+
+
+
+
+
+
+
+	}
+
+	updateVis() {
+		let vis = this;
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+	}
+
+	updateSelection(selectedBees) {
+		let vis = this;
+
+
+	}
+
+	renderVis() {
+		let vis = this;
+
+	
+
+
+
+	}
+
+/*
     initVis() {
     	let vis = this;
 
@@ -322,3 +387,6 @@ class FlowerPatch {
             .text("End");
     }
 }
+
+
+*/

@@ -90,7 +90,6 @@ async function show_gallery() {
 	return true;
 }
 
-
 async function show_barchart() {
 
 	promise = Promise.all(
@@ -191,11 +190,37 @@ async function clear_vis_container() {
 }
 
 
+async function show_gallery_demo() {
+
+
+	promise = Promise.all(
+		[d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv'),
+		d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv')
+		])
+	const [tracks, bees, flowers, visits] = await promise
+
+	clear_vis_container();
+	
+	var galleryViewContainer = document.createElement('div');
+	galleryViewContainer.id = 'galleryViewContainer';
+	var beeDiv = document.createElement('div');
+	beeDiv.id = 'beeDiv';
+	var galleryDiv = document.createElement('div');
+	galleryDiv = 'galleryDiv';
+
+	galleryViewContainer.appendChild(beeDiv);
+	galleryViewContainer.appendChild(galleryDiv);
+
+	
+
+}
+
 
 /*
 TO DO:
 
-IMPLEMENT SELECTION FILTERING
 CROSS VIS INTERACTIVITY
 REFACTOR PATCHVIEW (SPECIFICALLY UPDATE FUNCTION)
 

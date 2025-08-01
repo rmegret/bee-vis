@@ -68,35 +68,40 @@ table, th, td {
 }
 
 svg.flowerpatchVisualization {
-  max-width: 100vh;
-  max-height: 100vh;
-  width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
+  	max-width: 100vh;
+  	max-height: 100vh;
+  	width: 100%;
+  	height: auto;
+  	display: block;
+  	margin: 0 auto;
 }
 
 svg.flowerpatchVisualization image {
-  max-width: 100vh;
-  max-height: 100vh;
-  width: 100%;
-  height: auto;
+  	max-width: 100vh;
+  	max-height: 100vh;
+  	width: 100%;
+  	height: auto;
 }
 
 #flex-container {
-  display: flex;
-  align-items: flex-start;
-  width: 100%;
+  	display: flex;
+  	align-items: flex-start;
+  	width: 100%;
 }
 
 #svg-container {
-  flex: 1 1 0%;
-  max-width: 80vh;
+  	flex: 1 1 0%;
+  	max-width: 80vh;
 }
 
 #bee-list-container {
-  margin-left: 30px;
-  min-width: 200px;
+  	margin-left: 30px;
+  	min-width: 200px;
 }
 
+#galleryViewContainer {
+	border: 1px;	
+	border-color: black;
+	width: 100%;
+}
 

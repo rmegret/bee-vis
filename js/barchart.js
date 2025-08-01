@@ -238,6 +238,17 @@ class Barchart {
 				return;
 			} 
 		});
+/*
+		if(selectedBees.length == 0) {
+			vis.xScale.domain(vis.durations.map(d => d[0]));
+		}
+		else {
+			vis.xScale.domain(vis.selectedBees)
+			vis.chartArea.selectAll('g.x-axis')
+				.transition().duration(750)
+				.call(vis.xAxis);
+		}
+*/
 		vis.renderVis();
 	}
 

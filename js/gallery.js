@@ -58,8 +58,7 @@ class Gallery {
 					gui.barchart.updateSelection(vis.selectedBees);
 				}
 				//gui.patchview.updateVis(vis.selectedBees);
-				gui.chronogram.updateSelection(vis.selectedBees);
-
+				gui.chronogram.updateVis(vis.selectedBees);
 			});
 
 		vis.updateVis();	
@@ -121,13 +120,13 @@ class Gallery {
 			})
 			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'))
 			.on('click', function(event, d) {
-				if (vis.selectedBees.includes(d.bee_id)) {
+				if (vis.selectedBees.includes(+d.bee_id)) {
 					vis.selectedBees = vis.selectedBees.filter(bee => bee != d.bee_id);
 					d3.select(this)
 						.style('filter', 'none');
 				}
 				else {
-					vis.selectedBees.push(d.bee_id);
+					vis.selectedBees.push(+d.bee_id);
 					d3.select(this)
 						.style('filter', 'drop-shadow(0 0 10px rgba(255, 0, 100, 0.8))');
 				}
@@ -137,7 +136,7 @@ class Gallery {
 					gui.barchart.updateSelection(vis.selectedBees);
 				}
 				//gui.patchview.updateVis(vis.selectedBees);
-				gui.chronogram.updateSelection(vis.selectedBees);
+				gui.chronogram.updateVis(vis.selectedBees);
 			});
 	}
 }
