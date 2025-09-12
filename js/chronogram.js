@@ -3,12 +3,11 @@ class Chronogram {
 		this.config = {
 			  parentElement: _config.parentElement,
 			  containerWidth: 850,
-			  containerHeight: 400,
+			  containerHeight: 350,
 			  margin: {top: 30, right: 20, bottom: 20, left: 75},
 			};
 			this.data = _data;
 			this.div = this.config.parentElement;
-			this.selectedTracks = [];
 			this.flowerFilters = ['all', 'blue', 'white'];
 			this.selectedFlowerFilter = 'all';
 			this.initVis();
@@ -17,7 +16,7 @@ class Chronogram {
 	initVis() {
 		let vis = this;
 
-		vis.title = d3.select(vis.config.parentElement).append('h2')
+		vis.title = d3.select(vis.div).append('h2')
 			.text('Visit Durations by Bee Id');
 
 		vis.flowerSelectorLabel = d3.select(vis.div).append('label')
@@ -36,18 +35,20 @@ class Chronogram {
 
 		d3.select(vis.div).append('br');
 
-
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
     	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
 
-		vis.data = vis.data.filter(d => d.bee_id !== 0);
+		vis.data = vis.data.filter(d => d.bee_id !== -1);
+
+		vis.videoStart = d3.min(vis.data, d => d.timestamp_start);
+		vis.videoEnd = d3.max(vis.data, d => d.timestamp_end);
 
 		vis.xScale = d3.scaleLinear()
-			.domain([0, d3.max(vis.data, d => d.end_frame)])
+			.domain([0, vis.videoEnd - vis.videoStart])
 			.range([0, vis.width]);
 
 		vis.xScaleOriginal = vis.xScale.copy();
-		vis.maxEndFrame = d3.max(vis.data, d => d.end_frame);
+		vis.maxEndStamp = vis.videoEnd - vis.videoStart;
 
 		vis.yScale = d3.scaleBand()
 			.domain(
@@ -59,12 +60,21 @@ class Chronogram {
 
 
 		vis.xAxis = d3.axisBottom(vis.xScale)
-			.ticks(10);
+			.tickFormat(d => {
+				let totalSeconds = Math.floor(d);
+				let hours = Math.floor(totalSeconds / 3600);
+				let minutes = Math.floor((totalSeconds % 3600) / 60);
+				let seconds = totalSeconds % 60;
+				return String(hours).padStart(2, '0') + ':' +
+					   String(minutes).padStart(2, '0') + ':' +
+					   String(seconds).padStart(2, '0');
+			});
 
+		
 		vis.yAxis = d3.axisLeft(vis.yScale)
 			.tickFormat(d => `Bee ${d}`);
 
-		vis.svg = d3.select(vis.config.parentElement).append('svg')
+		vis.svg = d3.select(vis.div).append('svg')
 			.attr('width', vis.config.containerWidth)
 			.attr('height', vis.config.containerHeight);
 
@@ -90,7 +100,7 @@ class Chronogram {
 				// Clamp domain to prevent negative zoom/pan
 				const [min, max] = newX.domain();
 				const clampedMin = Math.max(0, min);
-				const clampedMax = Math.min(vis.maxEndFrame, max);
+				const clampedMax = Math.min(vis.maxEndStamp, max);
 
 				vis.xScale.domain([clampedMin, clampedMax]);
 
@@ -142,7 +152,7 @@ class Chronogram {
 
 		vis.groupedData = d3.groups(vis.filteredData, d => d.bee_id);
 		vis.yScale.domain([...new Set(vis.filteredData.map(d => d.bee_id))].sort((a, b) => a - b));
-		vis.xScale.domain([0, vis.maxEndFrame]);
+		vis.xScale.domain([0, vis.maxEndStamp]);
 		vis.svg.transition().duration(0).call(vis.zoom.transform, d3.zoomIdentity);
 		vis.chartArea.select('.x-axis').call(vis.xAxis);		
 		vis.chartArea.select('.y-axis').call(vis.yAxis);
@@ -172,8 +182,7 @@ class Chronogram {
 	}
 */
 
-
-		renderVis() {
+	renderVis() {
 		let vis = this;
 
 		if (!vis.tooltip) {
@@ -213,25 +222,21 @@ class Chronogram {
 			marks.join(
 				enter => enter.append('rect')
 					.attr('class', 'mark')
-					.attr('x', d => vis.xScale(d.start_frame))
-					.attr('y', () => vis.yScale.bandwidth() / 2 - 2)					
-					.attr('width', d => vis.xScale(d.end_frame) - vis.xScale(d.start_frame))
+					.attr('x', d => vis.xScale(d.timestamp_start - vis.videoStart))
+					.attr('y', () => vis.yScale.bandwidth() / 2 - 2)
+					.attr('width', d => vis.xScale(d.timestamp_end) - vis.xScale(d.timestamp_start))
 					.attr('height', 4)
 					.attr('fill', d => d.flower_color)
-					.attr('opacity', d => {
-						if (vis.selectedTracks.length === 0) return 0.8;
-						return vis.selectedTracks.includes(d.track_id) ? 1 : 0.3;
-					})
 					.style('stroke', '#333')
 					.style('stroke-width', 2)
 					.on('mouseover', (event, d) => {
 						vis.tooltip.style('visibility', 'visible')
 							.html(`
-								<strong>Track ID:</strong> ${d.track_id}<br/>
+								<strong>Visit ID:</strong> ${d.visit_id}<br/>
 								<strong>Bee ID:</strong> ${d.bee_id}<br/>
 								<strong>Flower ID:</strong> ${d.flower_id}<br/>
-								<strong>Start Frame:</strong> ${d.start_frame}<br/>
-								<strong>End Frame:</strong> ${d.end_frame}<br/>
+								<strong>Start Time:</strong> ${d.timestamp_start}<br/>
+								<strong>End Time:</strong> ${d.timestamp_end}<br/>
 								<strong>Flower Color:</strong> ${d.flower_color}
 							`);
 					})
@@ -243,13 +248,9 @@ class Chronogram {
 					.on('mouseout', () => vis.tooltip.style('visibility', 'hidden')),
 
 				update => update
-					.attr('x', d => vis.xScale(d.start_frame))
-					.attr('width', d => vis.xScale(d.end_frame) - vis.xScale(d.start_frame))
-					.attr('y', () => vis.yScale.bandwidth() / 2 - 2)	
-					.attr('opacity', d => {
-						if (vis.selectedTracks.length === 0) return 1;
-						return vis.selectedTracks.includes(d.track_id) ? 1 : 0.5;
-					}),
+					.attr('x', d => vis.xScale(d.timestamp_start - vis.videoStart))
+					.attr('width', d => vis.xScale(d.duration))
+					.attr('y', () => vis.yScale.bandwidth() / 2 - 2),
 
 				exit => exit.remove()
 			);
@@ -279,3 +280,9 @@ class Chronogram {
 			});
 	}
 }
+
+
+/*
+TO DO:
+- PRESERVE ZOOM WHEN UPDATING
+*/

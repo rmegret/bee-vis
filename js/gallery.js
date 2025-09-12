@@ -3,12 +3,11 @@ class Gallery {
         this.config = {
             parentElement: _config.parentElement,
             containerWidth: 850,
-            containerHeight: 70,
+            containerHeight: 90,
             margin: {top: 5, right: 5, bottom: 5, left: 5},
-            beeSize: 50,
-            colorSize: 30
         };
         this.data = _data;
+		this.div = _config.parentElement
         this.selectedBees = [];
         this.selectedColors = [];
         this.initVis();
@@ -20,6 +19,12 @@ class Gallery {
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
 		vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
 
+		d3.select(this.div)
+			.style('width', 'fit-content')
+			.style('height', 'auto')
+
+		vis.data = vis.data.filter(d => +d.bee_id !== -1)
+	
 		vis.xScale = d3.scaleBand()
 			.domain(
 			[...new Set(vis.data
@@ -41,7 +46,7 @@ class Gallery {
 
 		vis.chartArea.append('g')
 			.attr('class', 'x-axis')
-			.attr('transform', `translate(0, 40)`)
+			.attr('transform', `translate(0, 60)`)
 			.call(vis.xAxis)
 			.select('path').style('stroke', 'none');
 
@@ -57,7 +62,7 @@ class Gallery {
 				if (gui.barchart.selectedXFilter == 'bee_id') {
 					gui.barchart.updateSelection(vis.selectedBees);
 				}
-				//gui.patchview.updateVis(vis.selectedBees);
+				gui.patchview.updateVis(vis.selectedBees);
 				gui.chronogram.updateVis(vis.selectedBees);
 			});
 
@@ -94,22 +99,21 @@ class Gallery {
 		images.enter().append('image')
 			.attr('class', 'img')
 			.merge(images)
-			.attr('href', d => `${'data/flowerpatch/crops/'+d.images[0]}`)
+			.attr('href', d => `data/newdata/captures/${d.images[0]}`)
 			.attr('x', d => vis.xScale(d.bee_id))
 			.attr('y', 0)
 			.attr('width', vis.xScale.bandwidth())
+			.attr('height', 60)
+			.attr('preserveAspectRatio', 'xMidYMid slice')
 			.on('mouseover', (event, d) => {
 				vis.tooltip.style('visibility', 'visible')
 				.html(`
 					<div>
 						<strong>Bee ID: </strong>${d.bee_id}<br/>
-						<strong>Paint Color: </strong>${d.paint_color}<br/>
-						<strong>Paint Size: </strong>${d.paint_size}<br/>
-						<strong>Paint Shape: </strong>${d.paint_shape}<br/>
-						<strong>Comment:  </strong>${d.comment}<br/>
+						<strong>Paint Color: </strong>${d.bee_color}<br/>
 					</div>
 					<div>
-						<img src='data/flowerpatch/crops/${d.images[0]}'>
+						<img src='data/newdata/captures/${d.images[0]}'>
 					</div>
 				`);
 			})
@@ -130,22 +134,12 @@ class Gallery {
 					d3.select(this)
 						.style('filter', 'drop-shadow(0 0 10px rgba(255, 0, 100, 0.8))');
 				}
-				//TO DO: SELECT PATCHVIEW AND PASS selectedBees to their update functions
-				//REFACTOR ALL UPDATE FUNCTIONS TO TAKE BEE ARRAY AS PARAMETER
 				if (gui.barchart.selectedXFilter == 'bee_id') {
 					gui.barchart.updateSelection(vis.selectedBees);
 				}
-				//gui.patchview.updateVis(vis.selectedBees);
+				gui.patchview.updateVis(vis.selectedBees);
 				gui.chronogram.updateVis(vis.selectedBees);
 			});
 	}
 }
 
-/*
-TO DO
-
-SET UP FILTERING
-SET UP SHOW ALL FOR PICTURES ASSOCIATED TO A BEE
-SET UP CROSS INTERACTIVITY
-
-*/

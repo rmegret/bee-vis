@@ -3,7 +3,7 @@ class Barchart {
 		this.config = {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
-			containerHeight: 400,
+			containerHeight: 350,
 			margin: {top: 20, right: 20, bottom: 40, left:75},	
 		};
 		this.data = _data;
@@ -25,6 +25,7 @@ class Barchart {
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
     	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
 
+		vis.data = vis.data.filter(d => +d.bee_id !== -1)
 
 		//Extracting the first segment of the filter to be used for color later on
 		vis.xFilterSplit = vis.selectedXFilter.split('_');
@@ -86,7 +87,7 @@ class Barchart {
 		vis.durations = d3.rollups(
 			vis.data, 
 			  v => ({
-    			total_duration: d3.sum(v, d => d.duration),
+    			total_duration: d3.sum(v, d => d.visit_duration),
     			visit_count: v.length,
 				color: v[0][vis.fillColor]
   			}),
@@ -191,7 +192,7 @@ class Barchart {
 		vis.durations = d3.rollups(
 			vis.data, 
 			  v => ({
-    			total_duration: d3.sum(v, d => d.duration),
+    			total_duration: d3.sum(v, d => d.visit_duration),
     			visit_count: v.length,
 				color: v[0][vis.fillColor]
   			}),
@@ -301,7 +302,7 @@ class Barchart {
 				vis.tooltip.style('visibility', 'visible')
 					.html(`
 						<strong>${vis.xFilterSplit[0].charAt(0).toUpperCase() + vis.xFilterSplit[0].slice(1)} ID:</strong> ${d[0]}<br/>
-						<strong>Aggregated Duration:</strong> ${d[1].total_duration}<br/>
+						<strong>Total Duration:</strong> ${d[1].total_duration.toFixed(3)}s<br/>
 						<strong>Visit Count:</strong> ${d[1].visit_count}<br/>
 						<strong>${vis.xFilterSplit[0].charAt(0).toUpperCase() + vis.xFilterSplit[0].slice(1)} Color:</strong> ${d[1].color}<br/>
 					`);
