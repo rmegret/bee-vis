@@ -51,7 +51,12 @@ class FlowerPatch {
 		vis.yScale = d3.scaleLinear()
 		  	.domain([0, 1920])
 		  	.range([0, vis.config.containerHeight]);
-		
+
+/*
+		vis.colorScale = d3.scaleSequential()
+            .domain([0, maxVisits])
+            .interpolator(d3.interpolateRgb("cyan", "purple"));
+*/		
 		vis.updateVis(vis.selectedBees)
 	}
 
@@ -117,7 +122,7 @@ class FlowerPatch {
 							console.log(scale);
 						}
 						else {
-							repeatedPathAmplifier.set(pathId, 1);
+							repeatedPathAmplifier.set(pathId, 20);
 							scale = repeatedPathAmplifier.get(pathId)
 							console.log(scale)
 						}
@@ -181,36 +186,11 @@ class FlowerPatch {
 	}
 }
 
-/*OLD coordinate implementation
-		if (x2-x1 === 0) {
-			return [x1,y1];
-		}
-		const slope = (y2-y1) / (x2-x1);
-		const perpSlope = -1/(slope);
-		const midpoint = [(x1+x2)/2,(y1+y2)/2]
-		const perpIntercept = perpSlope * midpoint[0] - midpoint[1];
-		if (midpoint[0] < x1) {
-			var newX = midpoint[0] - (midpoint[0]*t);
-			var newY = perpSlope*newX + perpIntercept;
-		}
-		else {
-			newX = midpoint[0] + (midpoint[0]*t) ;
-			newY = perpSlope*newX + perpIntercept;
-		}
-		console.log([x1,y1]);
-		console.log([x2,y2]);
-		console.log(midpoint);
-		console.log(t);
-		console.log([newX,newY]);
-		return [newX,newY];
-
-*/
 
 
 /*
 To do:
 Scale for time difference between visits
-Colors paths
 
 
 Curvature: Based on number of visits on a list of repeated flower visits
