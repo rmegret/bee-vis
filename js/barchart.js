@@ -296,7 +296,7 @@ class Barchart {
 					return 0.3;
 				}
 			})
-			.style('fill', d => d3.color(d[1].color))
+			.style('fill', d => `var(--primary-${d[1].color})`)
 			.style('stroke', '#333')
 			.on('mouseover', (event, d) => {
 				vis.tooltip.style('visibility', 'visible')
@@ -335,7 +335,7 @@ class Barchart {
 			.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
 			.attr('width', vis.xScale.bandwidth())
 			.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]))
-			.style('fill', d => d3.color(d[1].color));
+			.style('fill', d => d[1].color);
 
 		barsEnter.transition().duration(750)
 			.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
@@ -346,6 +346,6 @@ class Barchart {
 			.attr('y', d => vis.yScale(d[1][vis.selectedYFilter]))
 			.attr('width', vis.xScale.bandwidth())
 			.attr('height', d => vis.height - vis.yScale(d[1][vis.selectedYFilter]))
-			.style('fill', d => d3.color(d[1].color));
+			.style('fill', d => d[1].color);
 	}
 }
