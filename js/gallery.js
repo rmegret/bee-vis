@@ -99,7 +99,7 @@ class Gallery {
 		images.enter().append('image')
 			.attr('class', 'img')
 			.merge(images)
-			.attr('href', d => `data/newdata/captures/${d.images[0]}`)
+			.attr('href', d => `data/gift_for_pablo/bee_images/${d.images[0]}`)
 			.attr('x', d => vis.xScale(d.bee_id))
 			.attr('y', 0)
 			.attr('width', vis.xScale.bandwidth())

@@ -1,6 +1,12 @@
 // Global variable for the entire vis
 var gui = {}
 
+// Global variables for current file paths
+
+var data_dir = 'data/gift_for_pablo/'
+var flower_file = 'flower_patch_config_0.json'
+var visit_file = 'gurabo_alcohol_take5.json' 
+
 // UTILITARY FUNCTIONS
 
 // Converts in place specified columns of data rows into numbers
@@ -13,146 +19,155 @@ function convert_columns_to_number(data, columns) {
   }
 }
 
+export function get_flower_categories(flowersData) {
+  	const flowers = Object.values(flowersData);
+  	const categories = Array.from(new Set(flowers.map(f => f.category)));
+  	return { flowers, categories };
+}
+
+export function get_bee_color(bee) {
+
+	switch (bee) {
+		case -1:
+			return 'gray';
+		case 1:
+			return '--primary-red'
+		case 2:
+			return '--primary-green'
+		case 3:
+			return '--primary-yellow'
+		case 4:
+			return '--primary-blue'
+		case 5:
+			return '--primary-lilac'
+		case 6:
+			return '--primary-white'
+	}	
+	return false;
+} 
+
+export function get_flower_position(flower) {
+
+
+	return true;
+}
+
+
+
+
 async function show_chronogram() {
-    
-	const promise = Promise.all([
-        d3.csv('data/newdata/visits.csv'),
-        d3.csv('data/newdata/bees.csv'),
-        d3.csv('data/newdata/flowers.csv')
-    ]);
+  	const promise = Promise.all([
+    	d3.json(`${data_dir + visit_file}`),
+    	d3.json(`${data_dir + flower_file}`)
+  	]);
 
-    const [visits, bees, flowers] = await promise;
+  	const [rawData, flowersData] = await promise;
+  	const { flowers, categories } = getFlowerCategories(flowersData);
+  	const visits = Object.values(rawData);
 
-    // Create lookup maps for beeColors and flowerColors
-    const beeColorMap = new Map(bees.map(d => [+d.bee_id, d.bee_color]));
-    const flowerColorMap = new Map(flowers.map(d => [+d.flower_id, d.flower_color]));
+  	visits.forEach(d => {
+    	d.timestamp_start = new Date(d.timestamp_start).getTime() / 1000;
+    	d.timestamp_end = new Date(d.timestamp_end).getTime() / 1000;
+    	d.visit_duration = +d.visit_duration;
+    	d.bee_id = +d.bee_id;
+    	d.flower_id = +d.visited_flower;
+  	});
 
-    visits.forEach(d => {
-        const startMs = new Date(d.timestamp_start).getTime();
-        const endMs = new Date(d.timestamp_end).getTime();
-        d.timestamp_start = startMs / 1000;
-        d.timestamp_end = endMs / 1000;
-        d.bee_id = +d.bee_id;
-        d.flower_id = +d.flower_id;
-        d.bee_color = beeColorMap.get(d.bee_id);
-        d.flower_color = flowerColorMap.get(d.flower_id);
+  	const flowerCategoryMap = new Map(flowers.map((f, i) => [i + 1, f.category]));
+  	visits.forEach(v => {
+    	v.flower_category = flowerCategoryMap.get(+v.visited_flower);
+  	});
+
+  	gui.chronogram = new Chronogram({
+    	parentElement: '#chronogram',
+  	}, visits, categories);
+
+  	return true;
+}
+
+async function show_gallery() {
+    const rawData = await d3.json(`${data_dir + visit_file}`);
+    const visits = Object.values(rawData);
+
+    const imageMap = new Map();
+    visits.forEach(v => {
+        if (v.bee_id === -1 || !v.filepath) return;
+        if (imageMap.has(v.bee_id)) {
+            imageMap.get(v.bee_id).push(v.filepath);
+        } else {
+            imageMap.set(v.bee_id, [v.filepath]);
+        }
     });
 
+    const bees = Array.from(imageMap, ([bee_id, images]) => ({
+        bee_id,
+        images
+    }));
 
-    gui.chronogram = new Chronogram({
-        parentElement: '#chronogram',
-    }, visits);
+    gui.gallery = new Gallery({
+        parentElement: '#gallery',
+    }, bees);
 
     return true;
 }
 
-
-async function show_gallery() {
-
-	promise = Promise.all([
-		d3.csv('data/newdata/visits.csv'),
-		d3.csv('data/newdata/bees.csv')
-	])
-	const [visits, bees] = await promise
-
-	//New image map to sort images by bee id	
-	const imageMap = new Map() 
-
-	//Take all tracks and make a map that groups all images by bee id
-	visits.forEach(function (visit) {
-		//Skip images for bee id = 0
-		if (visit.bee_id == -1) {
-			return;
-		}
-		//Skip tracks without an image
-		else if (visit.image_file == '') { 
-			return;
-		}
-		//If a bee id is already registered, push into the image array	
-		else if(imageMap.has(visit.bee_id)) {
-			imageMap.get(visit.bee_id).push(visit.image_file);
-		}
-		//If bee if has not been seen, set new bee id with first image
-		else {
-			imageMap.set(visit.bee_id, [visit.image_file]);
-		}	
-	});
-	
-
-	//Merge the bee data and the array of images for each bee
-	const mergedData = bees.map(d => ({
-		...d,
-		images: imageMap.get(d.bee_id)
-	}));
-
-	
-	gui.gallery = new Gallery({
-		parentElement: '#gallery',
-	}, mergedData);
-
-	return true;
-}
-
 async function show_barchart() {
+	const promise = Promise.all([
+		d3.json(`${data_dir + visit_file}`),
+		d3.json(`${data_dir + flower_file}`)
+	]);
 
-	promise = Promise.all([
-		d3.csv('data/newdata/visits.csv'),
-        d3.csv('data/newdata/bees.csv'),
-        d3.csv('data/newdata/flowers.csv')
-	])
-	const [visits, bees, flowers] = await promise
+	const [rawData, flowersData] = await promise;
+	const flowers = Object.values(flowersData);
 
-	// Create lookup maps for beeColors and flowerColors
-	const beeColorMap = new Map(bees.map(d => [d.bee_id, d.bee_color]));
-	const flowerColorMap = new Map(flowers.map(d => [d.flower_id, d.flower_color]));	
-	
-	const mergedData = visits.map(d => ({
-		...d,
-		bee_color: beeColorMap.get(d.bee_id),
-		flower_color: flowerColorMap.get(d.flower_id)
-	}));
+	const visits = Object.values(rawData);
+	convert_columns_to_number(visits, ['visit_duration', 'bee_id']);
 
-	convert_columns_to_number(mergedData, ['visit_duration', 'bee_id', 'flower_id']);
-	
+	const flowerCategoryMap = new Map(
+		flowers.map((f, i) => [i + 1, f.category])
+	);
+
+	visits.forEach(v => {
+		v.flower_category = flowerCategoryMap.get(+v.visited_flower);
+	});
+
 	gui.barchart = new Barchart({
 		parentElement: '#bar',
-	}, mergedData);
-	
+	}, visits);
+
 	return true;
 }
 
-
 async function show_patchview() {
+  	const promise = Promise.all([
+    	d3.json(`${data_dir + visit_file}`),
+    	d3.json(`${data_dir + flower_file}`)
+  	]);
 
-	promise = Promise.all([
-		d3.csv('data/newdata/visits.csv'),
-        d3.csv('data/newdata/flowers.csv'),
-		d3.csv('data/newdata/bees.csv')
-	])
-	const [visits, flowers, bees] = await promise
+  	const [rawData, flowersData] = await promise;
+  	const { flowers, categories } = get_flower_categories(flowersData);
+  	const visits = Object.values(rawData);
 
-	convert_columns_to_number(visits, ['flower_id', 'bee_id']);
+  	convert_columns_to_number(visits, ['bee_id']);
+  	visits.forEach(v => v.flower_id = +v.visited_flower);
 
-  	
-	// visits by flower_id
-  	const filteredVisits = visits.filter(d => +d.flower_id !== 0)
-  
   	const visitCount = d3.rollup(
-    	filteredVisits,
-    	v => v.length,
-    	d => d.flower_id
+    	visits.filter(v => v.flower_id !== 0),
+    		v => v.length,
+    		v => v.flower_id
   	);
 
-  	flowers.forEach(flower => {
-    	flower.visit_count = visitCount.get(+flower.flower_id) || 0;
+  	flowers.forEach((flower, i) => {
+    	flower.flower_id = i + 1;
+    	flower.visit_count = visitCount.get(flower.flower_id) || 0;
   	});
 
   	gui.patchview = new FlowerPatch({
-		parentElement: '#patchview'
-	}, flowers, visits, bees);
+    	parentElement: '#patchview',
+    	categories: categories
+  	}, flowers, visits, []);
 
-	
-	return true;
+  return true;
 }
 
 
@@ -199,331 +214,7 @@ TO DO:
 - REFORMAT TIMESTAMP IN VISIT TO HOUR/MINUTE/SECOND FORMAT
 - REFACTOR PATCHVIEW (SPECIFICALLY UPDATE FUNCTION)
 - IMPLEMENT TIMESTAMP INSTEAD OF FRAMES FOR ALL VIS
+- GLOBAL FUNCTIONS FOR DICTIONARY ACCESS
 
 */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-// Convert a flat list of rows into an indexed dictionnary
-// [{a:1, b:30}, {a:10, b:40}] => {1: {a:1, b:30}, 10: {a:10, b:40}}
-// The new structure points to the old structure, it just index it
-// So that any modification to the items of `indexed_data` modifies `data`
-function index_table(data, index_column) {
-  indexed_data = {}
-  for (row of data) {
-    indexed_data[row[index_column]] = row // Allow indexed access to the data
-  }
-  return indexed_data
-}
-
-// Function to be used in list.sort() to sort by multiple fields
-// in a list of objects [{a:1, b:10},{a:2,b:30}...]
-function sortByMultipleProperties(properties) {
-  return function (a, b) {
-    for (let prop of properties) {
-      let dir = 1;
-      if (prop[0] === '-') {
-        dir = -1;
-        prop = prop.slice(1);
-      }
-      if (a[prop] < b[prop]) return -1 * dir;
-      if (a[prop] > b[prop]) return 1 * dir;
-    }
-    return 0;
-  };
-}
-
-// Generic table creation
-function create_table(data, headers, parent_selector = "#main") {
-  d3.select('#msg').html('create_table...')
-
-  d3.select(parent_selector).html('') // Empty the parent (typically '#main')
-
-  // Create table with headers
-  let table = d3.select(parent_selector).append('table')
-  table.append("thead").append("tr")
-    .selectAll("th")
-    .data(headers)
-    .enter().append("th")
-    .text(function(d) {
-      return d;
-      })
-
-  // Create one row per item in data
-  let rows = table.append("tbody")
-    .selectAll("tr")
-    .data(data)
-    .enter()
-    .append("tr")
-      .attr('class', (row, row_id) => 'row_'+row_id)  // Add class to reach row content
-  
-  // For each column, tell each row to add a horizontal cell, using the corresponding second level data
-  for (col_name of headers) {
-    rows.append("td") //Name Cell
-        .attr('class', 'col_'+col_name)  // Add class to reach cell content
-        .text(row => row[col_name])  // row is data[row_id]
-  }
-
-  d3.select('#msg').html('create_table... done')
-}
-
-
-// FLOWERPATCH DEMO
-
-async function show_visits_table() {
-  console.log('show_visits_table')
-  data = await d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv')
-  // Note: Async call to load_data: the rest of the function is actually called as a callback after data has been loaded
-  
-  create_table(data, ['track_id','bee_id','flower_id','start_frame','end_frame'])
-}
-
-async function show_flowers_table() {
-  console.log('show_flowers_table')
-
-  data = await d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
-
-  create_table(data, ['flower_id','color','cx','cy','idx','idy'], "#main")
-
-  // Add custom color vis
-  d3.select('#main > table > tbody')
-    .selectAll('tr>td.col_color')
-    .html(function(d) {
-      return `<div style="width: 1em; height: 1em; border: 1px solid black; background-color: ${d.color}; display: inline-block;"></div> ${d.color}`
-    })
-}
-
-async function show_bee_labels_table() {
-  console.log('show_bee_labels_table')
-  
-  data = await d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv')
-  // Async call to load_data: the rest of the function is actually called as a callback after data has been loaded
-
-  create_table(data, ['bee_id','paint_color','paint_size','paint_shape','comment'], "#main")
-
-  // Add custom color vis
-  d3.select('#main > table > tbody')
-    .selectAll('tr>td.col_paint_color')
-    .html(function(d) {
-      return `<div style="width: 1em; height: 1em; border: 1px solid black; background-color: ${d.paint_color}; display: inline-block;"></div> ${d.paint_color}`
-    })
-  
-}
-
-async function show_detections_table(show_images=false, only_with_crops=false) {
-  console.log('show_detections_table')
-
-  data = await d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv')
-  // Async call to load_data: the rest of the function is actually called as a callback after data has been loaded
-
-  convert_columns_to_number(data, ['track_id','frame'])
-  // Sort to have each track grouped sequentially, then ordered by frame number
-  data = data.sort(sortByMultipleProperties(['track_id','frame']))
-
-  // Filter to keep only detections with a crop
-  if (only_with_crops) {
-    data = data.filter(d => d.crop_filename!='')
-  }
-
-  create_table(data, ['track_id','frame','flower_id','cx','cy','crop_filename'], "#main")
-  
-  var div = d3.select('#main').insert("div",":first-child")  // Prepend button callback before table
-  div.append("button")
-    .on('click', () => show_detections_table(!show_images, only_with_crops)) 
-    .text("Toogle images")
-  div.append('button') 
-    .on('click', () => show_detections_table(show_images, !only_with_crops)) 
-    .text("Toogle filter 'has crop'")
-
-  // Add image in column crop_filename if non empty
-  if (show_images) {
-    d3.select('#main > table > tbody')
-    .selectAll('tr>td.col_crop_filename')
-    .html(function(d) {
-      if ((d.crop_filename == undefined)||(d.crop_filename == '')) {
-        return `no img`
-      }
-      return `<div>${d.crop_filename}</div><div><img src="${'data/flowerpatch/crops/'+d.crop_filename}" style="width:128px; height:128px;"/></div>`
-    })
-  }
-
-  console.log('DONE (for large table, rendering may lag after creation)')
-}
-
-
-async function show_visits_with_bee_labels_table(show_crop_filenames=true, show_images=false) {
-  console.log('show_visits_with_bee_labels_table')
-
-  // How to load multiple datasets
-  // Sequentially (first load visits, then labels)
-  //data_visits = await d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv')
-  //data_labels = await d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv')
-
-  // In parallel (since d3.csv is async, both files are requested at once)
-  promise = Promise.all( 
-    [d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.visits.csv'),
-    d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.bee_labels.csv')
-    ] )
-  const [data_visits, data_bees] = await promise
-  gdebug.data_visits = data_visits
-
-  // Ensure correct data type for key columns (also helps with proper numerical sorting)
-  convert_columns_to_number(data_visits, ['bee_id'])
-  convert_columns_to_number(data_bees, ['bee_id','track_id'])
-
-  // MERGING OF THE BEE INFORMATION
-
-  // Create an indexed object/mapping to use as extra info for the visits
-  // Add Bee #0, which appears when there is no assigned bee
-  indexed_bees = index_table(data_bees, 'bee_id')
-  indexed_bees[0] = {bee_id:0, 
-    paint_color:undefined, paint_size:undefined, paint_shape:undefined,
-    comment:'undefined bee'}
-
-  // Append bee labels to visits table
-  for (visit of data_visits) {
-    let bee = indexed_bees[visit['bee_id']]
-    // copy relevant data from the labels table
-    visit['paint_color'] = bee['paint_color'] // copy relevant data from the labels table
-    visit['comment'] = bee['comment'] 
-
-    // Could also reference the complete row, but does not work with generic create_table
-    visit['bee_labels'] = bee
-  }
-
-  // OPTIONAL: MERGING OF THE IMAGE CROPS TAKEN FROM THE TRACKS TABLE
-  if (show_crop_filenames) {
-    data_tracks = await d3.csv('data/flowerpatch/flowerpatch_20240606_11h04.tracks.csv')
-    convert_columns_to_number(data_tracks, ['track_id'])
-
-    // Append first crop_filename found in data_tracks into visits_table
-    indexed_visits = index_table(data_visits, 'track_id')
-    for (detection of data_tracks) {
-      visit = indexed_visits[detection['track_id']]
-      if ((!!detection['crop_filename']) && (!visit?.crop_filename)) {// If crop_filename not defined yet and detection has it defined, copy it to the visits table
-        visit['crop_filename'] = detection['crop_filename'] // Allow indexed access to the data
-      }
-    }
-    gdebug.data_visits = data_visits
-  }
-
-  // DISPLAY AFTER MERGING
-  if (show_crop_filenames)
-     create_table(data_visits, ['track_id','bee_id','paint_color','comment','crop_filename'], "#main")
-  else
-     create_table(data_visits, ['track_id','bee_id','paint_color','comment'], "#main")
-  
-  // Add buttons to control crop_filename column
-  var div = d3.select('#main').insert("div",":first-child")  // Prepend button callback before table
-  div.append("button")
-    .on('click', function () {
-      show_images = !show_images
-      if (show_images) show_crop_filenames=true // Need to show the column to show images
-      show_visits_with_bee_labels_table(show_crop_filenames, show_images)
-    })
-    .text("Toogle images")
-  div.append('button') 
-    .on('click', () => show_visits_with_bee_labels_table(!show_crop_filenames, show_images)) 
-    .text("Toogle crop column")
-
-  if (show_crop_filenames && show_images) {
-    // And convert to image
-    d3.select('#main > table > tbody')
-    .selectAll('tr>td.col_crop_filename')
-    .html(function(d) {
-      if ((d.crop_filename == undefined)||(d.crop_filename == '')) {
-        return `no img`
-      }
-      return `<div style="display: flex; align-items: center; gap: 8px;">
-              <span>${d.crop_filename}</span>
-              <img src="${'data/flowerpatch/crops/'+d.crop_filename}" style="width:64px; height:64px;"/>
-              </div>`
-    })
-  }
-
-  console.log('DONE (for large table, rendering may lag after creation)')
-}
-
-
-async function show_video_frame() {
-  console.log('show_video_frame')
-
-  d3.select('#msg').html('Video Frame...')
-
-  // Video frame information
-  width = 2816
-  height = 2816
-  frame_filename = '/data/flowerpatch/flowerpatch_20240606_11h04_frame_0.jpg'
-
-  // Clear Main
-	clear_main();
-
-	clear_vis_container();
-
-  // Add as a simple image tag
-  // mainDiv.append('p').text('Plain <img> (cannot paint on it)')
-  // mainDiv.append('img')
-  //   .attr("src", frame_filename)
-  //   .style("width","100%")
-  //   .style("height","auto")
-
-  // Image inside SVG to be able to plot on it
-  mainDiv.append('p').text('SVG canvas (can add overlay elements to it)')
-  var svg = mainDiv.append("svg")
-    .attr("class","flowerpatch")
-    .attr('viewBox',`0 0 ${width} ${height}`)  // To be able to scale the content of the SVG with the SVG
-    .style("width","100%")
-    .style("height","auto")
-    .attr('preserveAspectRatio',"xMidYMid slice")
-    .attr('xmlns',"http://www.w3.org/2000/svg")
-
-  svg.append('image')
-  .attr('href',frame_filename)
-  .attr('x',0)
-  .attr('y',0)
-  .attr('width',width)
-  .attr('height',height)
-
-  // Overlay the flowers on top of the image
-  data = await d3.csv('/data/flowerpatch/flowerpatch_20240606_11h04.flowers.csv')
-  console.log(data)
-  
-  svg.selectAll("circle")
-  .data(data)
-  .join("circle")
-    .attr("cx",d=>d.cx)
-    .attr("cy",d=>d.cy)
-    .attr("r",100)
-    .attr("stroke","red")
-    .attr("stroke-width","10px")
-    .attr("fill","none")
-
-  svg.selectAll("text")
-    .data(data)
-    .join("text")
-      .attr("x",d=>d.cx)
-      .attr("y",d=>d.cy)
-      .text(d=>d.flower_id)
-      .attr("fill"," red")
-      .style('font-size','120px')
-      .style('font-family','monospace')
-      .style('font-weight','bold')
-      .style('text-anchor','middle')
-      //.style('dominant-baseline','middle')
-      .attr('dy','0.35em')
-  }
-*/

@@ -1,17 +1,18 @@
 class Chronogram {
-	constructor(_config, _data) {
+	constructor(_config, _data, _categories) {
 		this.config = {
-			  parentElement: _config.parentElement,
-			  containerWidth: 850,
-			  containerHeight: 350,
-			  margin: {top: 30, right: 20, bottom: 20, left: 75},
-			};
-			this.data = _data;
-			this.div = this.config.parentElement;
-			this.flowerFilters = ['all', 'blue', 'white'];
-			this.selectedFlowerFilter = 'all';
-			this.initVis();
-		}
+			parentElement: _config.parentElement,
+			containerWidth: 850,
+			containerHeight: 350,
+			margin: {top: 30, right: 20, bottom: 20, left: 75},
+		
+		};
+		this.data = _data;
+		this.div = this.config.parentElement;
+		this.flowerFilters = ['all', ..._categories];
+		this.selectedFlowerFilter = 'all';
+		this.initVis();
+	}
 
 	initVis() {
 		let vis = this;
@@ -37,9 +38,9 @@ class Chronogram {
 
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
     	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
-
-		vis.data = vis.data.filter(d => d.bee_id !== -1);
-
+	
+		vis.data = vis.data.filter(d => d.bee_id !== -1 && d.bee_id);	
+	
 		vis.videoStart = d3.min(vis.data, d => d.timestamp_start);
 		vis.videoEnd = d3.max(vis.data, d => d.timestamp_end);
 
@@ -91,7 +92,7 @@ class Chronogram {
 			.call(vis.xAxis);
 		
 		vis.zoom = d3.zoom()
-		  	.scaleExtent([0.2, 10])
+		  	.scaleExtent([0.2, 20])
 		  	.translateExtent([[0, 0], [vis.width, vis.height]])
 		  	.on("zoom", (event) => {
 				// Use original xScale as reference
@@ -136,11 +137,11 @@ class Chronogram {
 	updateVis(selectedBees) {
 		let vis = this;
 
-		if (vis.selectedFlowerFilter == 'blue') {
-			vis.filteredData = vis.data.filter(d => d.flower_color !== 'white' && d.flower_color !== undefined);
+		if (vis.selectedFlowerFilter == 'alcohol') {
+			vis.filteredData = vis.data.filter(d => d.flower_category !== 'control' && d.flower_category !== undefined);
 		}
-		else if (vis.selectedFlowerFilter == 'white') {
-			vis.filteredData = vis.data.filter(d => d.flower_color !== 'blue' && d.flower_color !== undefined);
+		else if (vis.selectedFlowerFilter == 'control') {
+			vis.filteredData = vis.data.filter(d => d.flower_category !== 'alcohol' && d.flower_category !== undefined);
 		}
 		else {
 			vis.filteredData = vis.data;
@@ -213,7 +214,7 @@ class Chronogram {
 			.attr('transform', d => `translate(0, ${vis.yScale(d[0])})`);
 
 		// For each group, bind and draw marks
-		beeGroupMerge.each(function([bee, tracks]) {
+		beeGroupMerge.each(function([bee, tracks]) {	
 			const group = d3.select(this);
 
 			const marks = group.selectAll('.mark')

@@ -9,7 +9,7 @@ class Barchart {
 		this.data = _data;
 		this.div = this.config.parentElement;
 		this.selectedBees = [];
-		this.xFilters = ['bee_id','flower_id','flower_color'];
+		this.xFilters = ['bee_id','flower_id','flower_category'];
 		this.yFilters = ['total_duration', 'visit_count'];
 		this.sortFilters = ['default', 'ascending', 'descending'];
 		this.selectedXFilter = 'bee_id';

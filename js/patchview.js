@@ -108,23 +108,18 @@ class FlowerPatch {
 				
 						const pathId = `${fromFlower.flower_id}-${toFlower.flower_id}`;
 						const revPathId = `${toFlower.flower_id}-${fromFlower.flower_id}`;
-
-						console.log(pathId);
-		
+	
 						if (repeatedPathAmplifier.has(revPathId)) {
 							repeatedPathAmplifier.set(revPathId,-Math.abs(repeatedPathAmplifier.get(revPathId)) - 40);	
 							var scale = repeatedPathAmplifier.get(revPathId);
-							console.log(scale)
 						}
 						else if (repeatedPathAmplifier.has(pathId)) {
 							repeatedPathAmplifier.set(pathId, Math.abs(repeatedPathAmplifier.get(pathId)) + 40);	
 							scale = repeatedPathAmplifier.get(pathId);
-							console.log(scale);
 						}
 						else {
-							repeatedPathAmplifier.set(pathId, 20);
+							repeatedPathAmplifier.set(pathId, 1);
 							scale = repeatedPathAmplifier.get(pathId)
-							console.log(scale)
 						}
 
 						const { midpoint, ortho } = vis.getMidVector(+fromFlower.center_x, +fromFlower.center_y, +toFlower.center_x, +toFlower.center_y);
@@ -192,12 +187,10 @@ class FlowerPatch {
 To do:
 Scale for time difference between visits
 
-
 Curvature: Based on number of visits on a list of repeated flower visits
 Thickness based on transition times
 Preprocess transition times
 Wavelength for transition
-Vectorize for midpoint pivot
 */
 
 
