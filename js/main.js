@@ -19,13 +19,13 @@ function convert_columns_to_number(data, columns) {
   }
 }
 
-export function get_flower_categories(flowersData) {
+function get_flower_categories(flowersData) {
   	const flowers = Object.values(flowersData);
   	const categories = Array.from(new Set(flowers.map(f => f.category)));
   	return { flowers, categories };
 }
 
-export function get_bee_color(bee) {
+function get_bee_color(bee) {
 
 	switch (bee) {
 		case -1:
@@ -46,14 +46,11 @@ export function get_bee_color(bee) {
 	return false;
 } 
 
-export function get_flower_position(flower) {
+function get_flower_position(flower) {
 
 
 	return true;
 }
-
-
-
 
 async function show_chronogram() {
   	const promise = Promise.all([
@@ -62,7 +59,7 @@ async function show_chronogram() {
   	]);
 
   	const [rawData, flowersData] = await promise;
-  	const { flowers, categories } = getFlowerCategories(flowersData);
+  	const { flowers, categories } = get_flower_categories(flowersData);
   	const visits = Object.values(rawData);
 
   	visits.forEach(d => {
