@@ -4,8 +4,7 @@ class Chronogram {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
 			containerHeight: 350,
-			margin: {top: 30, right: 20, bottom: 20, left: 75},
-		
+			margin: {top: 30, right: 20, bottom: 20, left: 75},	
 		};
 		this.data = _data;
 		this.div = this.config.parentElement;

@@ -1,73 +1,88 @@
-import * as d3 from "./d3.v7.js";
-import * as jquery from "./jquery-3.7.1.js"
-
-import { convert_columns_to_number, join_data, get_bee_image } from "./utility.js";
-import { Chronogram } from "./vis/chronogram.js"
-//import { Barchart } from "./vis/barchart.js"
-//import { Patchview } from "./vis/patchview.js"
-//import { Gallery } from "./vis/gallery.js"
-
-
-//Global variable for entire vis
+// Global variable for the entire vis
 var gui = {}
 
 // Global variables for current file paths
-var data_dir = 'data/gift_for_pablo/';
-var flower_file = 'flower_patch_config_0.json';
-var visit_file = 'gurabo_alcohol_take5.json';
 
-window.addEventListener('load', show_visualization);
+var data_dir = 'data/gift_for_pablo/'
+var flower_file = 'flower_patch_config_0.json'
+var visit_file = 'gurabo_alcohol_take5.json' 
 
-async function prep_data() {
-	//Prepping data for use in all vis
-	const promise = Promise.all([
-		d3.json(`${data_dir + visit_file}`),
-		d3.json(`${data_dir + flower_file}`)
-	]);
-		
-	const [visitsData, flowersData] = await promise;
-	const visits = Object.values(visitsData);
-	const flowers = Object.values(flowersData);
+// UTILITARY FUNCTIONS
 
-	visits.forEach(d => {
-			d.timestamp_start = new Date(d.timestamp_start).getTime() / 1000;
-			d.timestamp_end = new Date(d.timestamp_end).getTime() / 1000;
-			d.visit_duration = +d.visit_duration;
-			d.bee_id = +d.bee_id;
-			d.flower_id = +d.visited_flower;
-			d.img = get_bee_image(d);
-		});
-
-	//Data that will be used for all vis
-	return join_data(visits, flowers);
+// Converts in place specified columns of data rows into numbers
+// data[i]['colname'] becomes a number
+function convert_columns_to_number(data, columns) {
+  for (row of data) {
+    for (column of columns) {
+      row[column] = +row[column]
+    }
+  }
 }
 
-async function group_categories() {
-	const flowerData = await d3.json(`${data_dir + flower_file}`);
-    const flowers = Object.values(flowerData);
-
-	catMap = new Map();
-
-	catMap.set('cat0', 'all')
-
-	flowers.forEach(f => {
-		
-	});
-
-
-	return catMap;
+function get_flower_categories(flowersData) {
+  	const flowers = Object.values(flowersdata);
+  	const categories = array.from(new set(flowers.map(f => f.category)));
+  	return { flowers, categories };
 }
 
-async function show_chronogram(dataframe) {
-	
+function get_bee_color(bee) {
+
+	switch (bee) {
+		case -1:
+			return 'gray';
+		case 1:
+			return '--primary-red'
+		case 2:
+			return '--primary-green'
+		case 3:
+			return '--primary-yellow'
+		case 4:
+			return '--primary-blue'
+		case 5:
+			return '--primary-lilac'
+		case 6:
+			return '--primary-white'
+	}	
+	return false;
+} 
+
+function get_flower_position(flower) {
+
+
+	return true;
+}
+
+async function show_chronogram() {
+  	const promise = Promise.all([
+    	d3.json(`${data_dir + visit_file}`),
+    	d3.json(`${data_dir + flower_file}`)
+  	]);
+
+  	const [rawData, flowersData] = await promise;
+  	const { flowers, categories } = get_flower_categories(flowersData);
+  	const visits = Object.values(rawData);
+
+  	visits.forEach(d => {
+    	d.timestamp_start = new Date(d.timestamp_start).getTime() / 1000;
+    	d.timestamp_end = new Date(d.timestamp_end).getTime() / 1000;
+    	d.visit_duration = +d.visit_duration;
+    	d.bee_id = +d.bee_id;
+    	d.flower_id = +d.visited_flower;
+  	});
+
+  	const flowerCategoryMap = new Map(flowers.map((f, i) => [i + 1, f.category]));
+  	visits.forEach(v => {
+    	v.flower_category = flowerCategoryMap.get(+v.visited_flower);
+  	});
+
   	gui.chronogram = new Chronogram({
     	parentElement: '#chronogram',
-  	}, dataframe);
+  	}, visits, categories);
 
   	return true;
 }
-/*
-async function show_gallery(dataframe) {
+
+async function show_gallery() {
     const rawData = await d3.json(`${data_dir + visit_file}`);
     const visits = Object.values(rawData);
 
@@ -93,7 +108,7 @@ async function show_gallery(dataframe) {
     return true;
 }
 
-async function show_barchart(dataframe) {
+async function show_barchart() {
 	const promise = Promise.all([
 		d3.json(`${data_dir + visit_file}`),
 		d3.json(`${data_dir + flower_file}`)
@@ -120,7 +135,7 @@ async function show_barchart(dataframe) {
 	return true;
 }
 
-async function show_patchview(dataframe) {
+async function show_patchview() {
   	const promise = Promise.all([
     	d3.json(`${data_dir + visit_file}`),
     	d3.json(`${data_dir + flower_file}`)
@@ -151,19 +166,17 @@ async function show_patchview(dataframe) {
 
   return true;
 }
-*/
+
 
 async function show_visualization() {	
 	
 	clear_main();
 	clear_vis_container();
 
-	const dataframe = prep_data();
-
-	show_chronogram(dataframe);
-	//show_barchart(dataframe);
-	//show_patchview(dataframe);
-	//show_gallery(dataframe);
+	show_chronogram();
+	show_barchart();
+	show_patchview();
+	show_gallery();
 
 }
 
@@ -199,7 +212,6 @@ TO DO:
 - REFACTOR PATCHVIEW (SPECIFICALLY UPDATE FUNCTION)
 - IMPLEMENT TIMESTAMP INSTEAD OF FRAMES FOR ALL VIS
 - GLOBAL FUNCTIONS FOR DICTIONARY ACCESS
-- MODULAR VISUALIZATIONS THAT CAN BE ADDED OR REMOVED
 
 */
 
