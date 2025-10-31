@@ -1,8 +1,8 @@
 import { convert_columns_to_number, join_data, get_bee_image } from "./utility.js";
 import { Chronogram } from "./vis/chronogram.js"
-//import { Barchart } from "./vis/barchart.js"
-//import { Patchview } from "./vis/patchview.js"
-//import { Gallery } from "./vis/gallery.js"
+import { Barchart } from "./vis/barchart.js"
+import { Patchview } from "./vis/patchview.js"
+import { Gallery } from "./vis/gallery.js"
 
 
 //Global variable for entire vis
@@ -34,7 +34,7 @@ async function prep_data() {
 			d.bee_id = +d.bee_id;
 			d.flower_id = +d.visited_flower;
 			d.filepath = `${data_dir + images_folder + get_bee_image(d)}`;
-		});
+	});
 
 	//Data that will be used for all vis
 	return join_data(visits, flowers);
@@ -45,138 +45,73 @@ async function group_categories() {
     const flowers = Object.values(flowerData);
 
 	catMap = new Map();
-
 	catMap.set('cat0', 'all')
 
 	flowers.forEach(f => {
 		
 	});
 
+	
 
 	return catMap;
 }
 
-async function show_chronogram(dataframe) {
-	
+async function show_chronogram(dataframe) {	
   	gui.chronogram = new Chronogram({
     	parentElement: '#chronogram',
   	}, dataframe);
 
   	return true;
 }
-/*
+
 async function show_gallery(dataframe) {
-    const rawData = await d3.json(`${data_dir + visit_file}`);
-    const visits = Object.values(rawData);
-
-    const imageMap = new Map();
-    visits.forEach(v => {
-        if (v.bee_id === -1 || !v.filepath) return;
-        if (imageMap.has(v.bee_id)) {
-            imageMap.get(v.bee_id).push(v.filepath);
-        } else {
-            imageMap.set(v.bee_id, [v.filepath]);
-        }
-    });
-
-    const bees = Array.from(imageMap, ([bee_id, images]) => ({
-        bee_id,
-        images
-    }));
-
     gui.gallery = new Gallery({
         parentElement: '#gallery',
-    }, bees);
+    }, dataframe);
 
     return true;
 }
 
 async function show_barchart(dataframe) {
-	const promise = Promise.all([
-		d3.json(`${data_dir + visit_file}`),
-		d3.json(`${data_dir + flower_file}`)
-	]);
-
-	const [rawData, flowersData] = await promise;
-	const flowers = Object.values(flowersData);
-
-	const visits = Object.values(rawData);
-	convert_columns_to_number(visits, ['visit_duration', 'bee_id']);
-
-	const flowerCategoryMap = new Map(
-		flowers.map((f, i) => [i + 1, f.category])
-	);
-
-	visits.forEach(v => {
-		v.flower_category = flowerCategoryMap.get(+v.visited_flower);
-	});
-
 	gui.barchart = new Barchart({
 		parentElement: '#bar',
-	}, visits);
+	}, dataframe);
 
 	return true;
 }
 
 async function show_patchview(dataframe) {
-  	const promise = Promise.all([
-    	d3.json(`${data_dir + visit_file}`),
-    	d3.json(`${data_dir + flower_file}`)
-  	]);
-
-  	const [rawData, flowersData] = await promise;
-  	const { flowers, categories } = get_flower_categories(flowersData);
-  	const visits = Object.values(rawData);
-
-  	convert_columns_to_number(visits, ['bee_id']);
-  	visits.forEach(v => v.flower_id = +v.visited_flower);
-
-  	const visitCount = d3.rollup(
-    	visits.filter(v => v.flower_id !== 0),
-    		v => v.length,
-    		v => v.flower_id
-  	);
-
-  	flowers.forEach((flower, i) => {
-    	flower.flower_id = i + 1;
-    	flower.visit_count = visitCount.get(flower.flower_id) || 0;
-  	});
-
-  	gui.patchview = new FlowerPatch({
+  	gui.patchview = new Patchview({
     	parentElement: '#patchview',
-    	categories: categories
-  	}, flowers, visits, []);
+  	}, dataframe);
 
   return true;
 }
-*/
 
-async function show_visualization() {	
-	
+
+async function show_visualization() {		
 	clear_main();
 	clear_vis_container();
 
-	d3.select(".exp_title")
-		.text()
+	const dataframe = await prep_data();
 
-	const dataframe = prep_data();
-	show_chronogram(dataframe);
-	//show_barchart(dataframe);
-	//show_patchview(dataframe);
-	//show_gallery(dataframe);
+	d3.select(".exp_title")
+		.text(dataframe[0].experiment_name);
+
+	await show_chronogram(dataframe);
+	await show_barchart(dataframe);
+	await show_patchview(dataframe);
+	await show_gallery(dataframe);
 
 }
 
 
-async function clear_main() {
-
+function clear_main() {
 	var mainDiv = d3.select('#main');
   	mainDiv.html('');
 }
 
-
-async function clear_vis_container() {
-
+function clear_vis_container() {
 	var chronogramContainer = d3.select('#chronogram');
 	chronogramContainer.html('');
 
@@ -190,15 +125,12 @@ async function clear_vis_container() {
 	barContainer.html('');
 }
 
-
-
 /*
 TO DO:
 
 - REFORMAT TIMESTAMP IN VISIT TO HOUR/MINUTE/SECOND FORMAT
 - REFACTOR PATCHVIEW (SPECIFICALLY UPDATE FUNCTION)
 - IMPLEMENT TIMESTAMP INSTEAD OF FRAMES FOR ALL VIS
-- GLOBAL FUNCTIONS FOR DICTIONARY ACCESS
 - MODULAR VISUALIZATIONS THAT CAN BE ADDED OR REMOVED
 
 */

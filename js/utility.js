@@ -7,7 +7,6 @@ export function convert_columns_to_number(data, columns) {
 }
 
 export function join_data(visits, flowers) {
-
 	const dataframe = visits.map(v => ({
         ...v,
 		flower: flowers[v.flower_id - 1]
@@ -31,20 +30,13 @@ export function get_bee_id(visit) {
 
 export function get_bee_color(bee) {
 	switch (bee) {
-		case 1:
-			return '--primary-red';
-		case 2:
-			return '--primary-green';
-		case 3:
-			return '--primary-yellow';
-		case 4:
-			return '--primary-blue';
-		case 5:
-			return '--primary-lilac';
-		case 6:
-			return '--primary-white';
-		default:
-			return 'gray';
+		case 1: return '--primary-red';
+		case 2: return '--primary-green';
+		case 3: return '--primary-yellow';
+		case 4: return '--primary-blue';
+		case 5: return '--primary-lilac';
+		case 6: return '--primary-white';
+		default: return 'gray';
 	}	
 }
 
@@ -67,4 +59,3 @@ export function get_visit_timestamps(visit) {
 export function get_visit_duration(visit) {
 	return +visit.visit_duration;
 }
-

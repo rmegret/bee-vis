@@ -1,4 +1,4 @@
-import * as utility from "../utility.js
+import * as utility from "../utility.js"
 
 export class Gallery {
 	constructor(_config, _data){
@@ -9,4 +9,4 @@ export class Gallery {
 			margin: _config.margin,		
 		};
 	}
-}"
+}
