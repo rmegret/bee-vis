@@ -7,7 +7,12 @@ export function convert_columns_to_number(data, columns) {
 }
 
 export function join_data(visits, flowers) {
-	return {...visits,...flowers};
+
+	const dataframe = visits.map(v => ({
+        ...v,
+		flower: flowers[v.flower_id - 1]
+    }));
+    return dataframe;
 }
 
 export function get_flower_categories(data) {
@@ -44,7 +49,7 @@ export function get_bee_color(bee) {
 }
 
 export function get_bee_image(visit) {
-	return visit.filepath.match("/bee-tracking-id-(\d+)\.jpg/"); //pattern matches 'bee-tracking-id-#.jpg' where # is a number
+	return visit.filepath.match(/bee-tracking-id-\d+\.jpg/)[0]; //pattern matches 'bee-tracking-id-#.jpg' where # is a number
 }
 
 export function get_visit_id(visit, visits) {

@@ -1,5 +1,6 @@
 /* Custom Color variables*/
 :root {
+	/* Bee Colors*/
 	--primary-red: red;
 	--primary-blue: blue;
 	--primary-lilac: #8A2BE2;
@@ -7,6 +8,10 @@
 	--primary-yellow: yellow;
 	--primary-white: white;	
 
+	/* Property Colors*/
+	--cat1:orange;
+	--cat2:purple;
+	--cat3:pink;
 }
 
 svg {

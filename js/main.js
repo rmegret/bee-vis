@@ -1,6 +1,3 @@
-import * as d3 from "./d3.v7.js";
-import * as jquery from "./jquery-3.7.1.js"
-
 import { convert_columns_to_number, join_data, get_bee_image } from "./utility.js";
 import { Chronogram } from "./vis/chronogram.js"
 //import { Barchart } from "./vis/barchart.js"
@@ -15,6 +12,7 @@ var gui = {}
 var data_dir = 'data/gift_for_pablo/';
 var flower_file = 'flower_patch_config_0.json';
 var visit_file = 'gurabo_alcohol_take5.json';
+var images_folder = 'bee_images/'
 
 window.addEventListener('load', show_visualization);
 
@@ -35,7 +33,7 @@ async function prep_data() {
 			d.visit_duration = +d.visit_duration;
 			d.bee_id = +d.bee_id;
 			d.flower_id = +d.visited_flower;
-			d.img = get_bee_image(d);
+			d.filepath = `${data_dir + images_folder + get_bee_image(d)}`;
 		});
 
 	//Data that will be used for all vis
@@ -158,8 +156,10 @@ async function show_visualization() {
 	clear_main();
 	clear_vis_container();
 
-	const dataframe = prep_data();
+	d3.select(".exp_title")
+		.text()
 
+	const dataframe = prep_data();
 	show_chronogram(dataframe);
 	//show_barchart(dataframe);
 	//show_patchview(dataframe);
