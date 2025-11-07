@@ -1,8 +1,8 @@
 import { convert_columns_to_number, join_data, get_bee_image } from "./utility.js";
 import { Chronogram } from "./vis/chronogram.js"
 import { Barchart } from "./vis/barchart.js"
-import { Patchview } from "./vis/patchview.js"
-import { Gallery } from "./vis/gallery.js"
+//import { Patchview } from "./vis/patchview.js"
+//import { Gallery } from "./vis/gallery.js"
 
 
 //Global variable for entire vis
@@ -42,24 +42,31 @@ async function prep_data() {
 
 async function group_categories() {
 	const flowerData = await d3.json(`${data_dir + flower_file}`);
-    const flowers = Object.values(flowerData);
+	const flowers = Object.values(flowerData);
 
-	catMap = new Map();
-	catMap.set('cat0', 'all')
+	const catMap = new Map();
+	catMap.set('cat0', 'all');
+
+	const maxLen = Math.max(...flowers.map(f => f.category.length));
+
+	for (let i = 0; i < maxLen; i++) {
+		catMap.set(`cat${i + 1}`, []);
+	}
 
 	flowers.forEach(f => {
-		
+		f.category.forEach((c, idx) => {
+			catMap.get(`cat${idx + 1}`).push(c);
+		});
 	});
-
-	
 
 	return catMap;
 }
 
-async function show_chronogram(dataframe) {	
+
+async function show_chronogram(dataframe, catMap) {	
   	gui.chronogram = new Chronogram({
     	parentElement: '#chronogram',
-  	}, dataframe);
+  	}, dataframe, catMap);
 
   	return true;
 }
@@ -72,35 +79,36 @@ async function show_gallery(dataframe) {
     return true;
 }
 
-async function show_barchart(dataframe) {
+async function show_barchart(dataframe, catMap) {
 	gui.barchart = new Barchart({
 		parentElement: '#bar',
-	}, dataframe);
+	}, dataframe, catMap);
 
 	return true;
 }
-
-async function show_patchview(dataframe) {
+/*
+async function show_patchview(dataframe, catMap) {
   	gui.patchview = new Patchview({
     	parentElement: '#patchview',
-  	}, dataframe);
+  	}, dataframe, catMap);
 
   return true;
 }
-
+*/
 
 async function show_visualization() {		
 	clear_main();
 	clear_vis_container();
 
 	const dataframe = await prep_data();
+	const catMap = await group_categories();	
 
 	d3.select(".exp_title")
-		.text(dataframe[0].experiment_name);
+		.text(`Experiment: ${dataframe[0].experiment_name}`);
 
-	await show_chronogram(dataframe);
-	await show_barchart(dataframe);
-	await show_patchview(dataframe);
+	await show_chronogram(dataframe, catMap);
+	await show_barchart(dataframe, catMap);
+	await show_patchview(dataframe, catMap);
 	await show_gallery(dataframe);
 
 }
