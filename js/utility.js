@@ -30,12 +30,12 @@ export function get_bee_id(visit) {
 
 export function get_bee_color(bee) {
 	switch (bee) {
-		case 1: return '--primary-red';
-		case 2: return '--primary-green';
-		case 3: return '--primary-yellow';
-		case 4: return '--primary-blue';
-		case 5: return '--primary-lilac';
-		case 6: return '--primary-white';
+		case 1: return 'red';
+		case 2: return 'green';
+		case 3: return 'yellow';
+		case 4: return 'blue';
+		case 5: return 'lilac';
+		case 6: return 'white';
 		default: return 'gray';
 	}	
 }

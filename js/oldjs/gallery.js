@@ -9,7 +9,6 @@ class Gallery {
         this.data = _data;
 		this.div = _config.parentElement
         this.selectedBees = [];
-        this.selectedColors = [];
         this.initVis();
     }
 

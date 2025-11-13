@@ -12,7 +12,7 @@ var gui = {}
 var data_dir = 'data/gift_for_pablo/';
 var flower_file = 'flower_patch_config_0.json';
 var visit_file = 'gurabo_alcohol_take5.json';
-var images_folder = 'bee_images/'
+var images_folder = 'bee_images/';
 
 window.addEventListener('load', show_visualization);
 
@@ -55,7 +55,13 @@ async function group_categories() {
 
 	flowers.forEach(f => {
 		f.category.forEach((c, idx) => {
-			catMap.get(`cat${idx + 1}`).push(c);
+			if (catMap.get(`cat${idx + 1}`).includes(c)) {
+				//Do nothing
+			}
+			else {
+				//Push new attribute into category
+				catMap.get(`cat${idx + 1}`).push(c);
+			}	
 		});
 	});
 
@@ -108,8 +114,8 @@ async function show_visualization() {
 
 	await show_chronogram(dataframe, catMap);
 	await show_barchart(dataframe, catMap);
-	await show_patchview(dataframe, catMap);
-	await show_gallery(dataframe);
+	//await show_patchview(dataframe, catMap);
+	//await show_gallery(dataframe);
 
 }
 
