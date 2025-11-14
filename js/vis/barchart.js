@@ -16,7 +16,7 @@ export class Barchart {
 		this.yFilters = ['visit_count', 'total_duration'];
 		this.sorts = ['default', 'ascending', 'descending'];
 		this.selectedXData = 'bee_id';
-		this.selectedYData = 'total_duration';
+		this.selectedYData = 'visit_count';
 		this.selectedCat = 'cat0';
 		this.selectedSort = 'default';
 		this.initVis();
@@ -24,8 +24,6 @@ export class Barchart {
 
 	initVis() {
 		let vis = this;
-
-		console.log(vis.cats)
 
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
     	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
@@ -91,7 +89,6 @@ export class Barchart {
 			.text(d => `${d.charAt(0).toUpperCase() + d.slice(1)}`)
 			.attr('value', d => d);
 
-		//Add category selectors
 		vis.catSelectorLabel = vis.filtersPage.append('label')
 			.attr('for', 'catSelector')
 			.text(' Category: ');
@@ -107,6 +104,8 @@ export class Barchart {
 			.append('option')
 			.text(d => d === 'cat0' ? 'all' : d)
 			.attr('value', d => d);
+		//Selectors END
+
 
 		d3.select(vis.div).append('br');
 
@@ -180,7 +179,7 @@ export class Barchart {
 			.text(`${vis.yLabelSplit[0].charAt(0).toUpperCase() + vis.yLabelSplit[0].slice(1) + " " + vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}`)
 
 
-		//Event listener for selection filters
+		//Event listeners for selectors
 		d3.select('#xSelector').on('change', (event) => {
 			vis.selectedXData = event.target.value;
 			vis.updateVis();
@@ -230,13 +229,10 @@ export class Barchart {
 		d3.select('#y-label').text(`${vis.yLabelSplit[0].charAt(0).toUpperCase() + vis.yLabelSplit[0].slice(1) + " " + vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}`);
 
 		if (vis.selectedXData === 'bee_id') {
-
 			const selectedAttributes = vis.cats.get(vis.selectedCat);  
-
 			vis.aggregatedData = d3.rollups(
 				vis.data,
 				v => {
-
 					if (vis.selectedCat === 'cat0') {
 						return {
 							total_duration: [
@@ -259,7 +255,6 @@ export class Barchart {
 						const counts = selectedAttributes.map(attr =>
 							v.filter(item => item.category.includes(attr)).length
 						);
-
 						return {
 							total_duration: durations,
 							visit_count: counts,
@@ -290,7 +285,6 @@ export class Barchart {
 
 		vis.yScale.domain([0, yMax])
 
-		if (vis.selectedCat === 'cat0') {
 			// Sort durations based on selected sort option
 			if (vis.selectedSort === 'ascending') {
 				vis.aggregatedData.sort((a, b) => d3.ascending(a[1][vis.selectedYData], b[1][vis.selectedYData]));
@@ -299,7 +293,7 @@ export class Barchart {
 			} else {
 				vis.aggregatedData.sort((a, b) => d3.ascending(+a[0], +b[0]));
 			}
-		}
+		
 
 		vis.xScale.domain(vis.aggregatedData.map(d => d[0]));
 
@@ -311,7 +305,18 @@ export class Barchart {
 		vis.chartArea.selectAll('g.y-axis')
 			.transition().duration(750)
 			.call(vis.yAxis);
-	
+
+		if (vis.selectedXData === "visited_flower") {
+    		d3.select("#catSelector")
+        		.property("disabled", true)
+        		.style("opacity", 0.5);
+
+    	vis.selectedCat = "cat0";
+		} else {
+    		d3.select("#catSelector")
+        		.property("disabled", false)
+        		.style("opacity", 1);
+		}
 	
 		vis.renderVis();
 	}
@@ -340,24 +345,31 @@ export class Barchart {
 		const barGroupMerged = barGroupEnter.merge(barGroup)
     		.attr('transform', g => `translate(${vis.xScale(g[0])}, 0)`);  // fix spelling
 
+	  	barGroup.exit().remove();		
+
 		barGroupMerged.each(function([id, dataObj]) {
     		const group = d3.select(this);
 
 
 			const barData = vis.selectedCat === 'cat0'
     			? [{ 
-        			value: dataObj[vis.selectedYData][0], 
-        			color: dataObj.color 
+        			visit_count: dataObj['visit_count'][0], 
+					total_duration: dataObj['total_duration'][0],
+        			color: dataObj.color,
+					attrName: 'all'
       			}]
     			: vis.cats.get(vis.selectedCat).map((attrName, i) => ({
-        			value: dataObj[vis.selectedYData][i],
-        			color: dataObj.color,          
+        			visit_count: dataObj['visit_count'][i], 
+					total_duration: dataObj['total_duration'][i],       			
+					color: dataObj.color,          
         			attrIndex: i + 1,
 					attrName: attrName
     			}));
 
+
     		const bars = group.selectAll('.bar')
         		.data(barData);
+
 
 			const barWidth = vis.xScale.bandwidth() / barData.length;
 
@@ -365,9 +377,9 @@ export class Barchart {
     			enter => enter.append('rect')
         			.attr('class', 'bar')
 					.attr('x', (d, i) => i * (vis.xScale.bandwidth() / barData.length))
-					.attr('y', d => vis.yScale(d.value))
+					.attr('y', d => vis.yScale(d[vis.selectedYData]))
 					.attr('width', vis.xScale.bandwidth() / barData.length)
-        			.attr('height', d => vis.height - vis.yScale(d.value))
+        			.attr('height', d => vis.height - vis.yScale(d[vis.selectedYData]))
 					.attr('stroke', 'black')
         			.style('fill', d => {
 						if (vis.selectedCat === 'cat0') {
@@ -378,7 +390,10 @@ export class Barchart {
 					})
         			.on('mouseover', (event, d) => {
             			vis.tooltip.style('visibility', 'visible')
-                		.html(`Duration: ${d.value.toFixed(1)}`);
+                		.html(`
+							<strong>${vis.yLabelSplit[0].charAt(0).toUpperCase() + vis.yLabelSplit[0].slice(1) + " " + vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}:</strong> ${d[vis.selectedYData].toFixed(2)}<br/>
+							<strong>Attribute:</strong>	${d.attrName}<br/>
+						`);
         			})
         			.on('mousemove', event => {
             			vis.tooltip
@@ -390,10 +405,10 @@ export class Barchart {
     			update => update
         			.transition().duration(750)
 					.attr('x', (d, i) => i * (vis.xScale.bandwidth() / barData.length))
+					.attr('y', d => vis.yScale(d[vis.selectedYData]))
 					.attr('width', vis.xScale.bandwidth() / barData.length)
-        			.attr('y', d => vis.yScale(d.value))
-        			.attr('height', d => vis.height - vis.yScale(d.value))
-        			.style('fill', d => {
+        			.attr('height', d => vis.height - vis.yScale(d[vis.selectedYData]))   
+					.style('fill', d => {
 						if (vis.selectedCat === 'cat0') {
 							return utility.getCssVar(`--primary-${d.color}`)
 						} else {
