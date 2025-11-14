@@ -7,12 +7,21 @@ export function convert_columns_to_number(data, columns) {
 }
 
 export function join_data(visits, flowers) {
-	const dataframe = visits.map(v => ({
-        ...v,
-		flower: flowers[v.flower_id - 1]
-    }));
-    return dataframe;
+
+    const flowerMap = new Map(
+        Object.entries(flowers)
+    );
+
+    return visits.map(v => {
+        const flower = flowerMap.get(String(v.visited_flower));
+        return {
+            ...v,
+            flower,
+            category: flower ? flower.category : []
+        };
+    });
 }
+
 
 export function get_flower_categories(data) {
   	const flowers = Object.values(data);
@@ -58,4 +67,8 @@ export function get_visit_timestamps(visit) {
 
 export function get_visit_duration(visit) {
 	return +visit.visit_duration;
+}
+
+export function getCssVar(varName) {
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
 }

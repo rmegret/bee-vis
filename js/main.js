@@ -112,7 +112,7 @@ async function show_visualization() {
 	d3.select(".exp_title")
 		.text(`Experiment: ${dataframe[0].experiment_name}`);
 
-	await show_chronogram(dataframe, catMap);
+//	await show_chronogram(dataframe, catMap);
 	await show_barchart(dataframe, catMap);
 	//await show_patchview(dataframe, catMap);
 	//await show_gallery(dataframe);

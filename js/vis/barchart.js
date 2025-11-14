@@ -17,13 +17,15 @@ export class Barchart {
 		this.sorts = ['default', 'ascending', 'descending'];
 		this.selectedXData = 'bee_id';
 		this.selectedYData = 'total_duration';
-		this.selectedCat = 'all';
+		this.selectedCat = 'cat0';
 		this.selectedSort = 'default';
 		this.initVis();
 	}
 
 	initVis() {
 		let vis = this;
+
+		console.log(vis.cats)
 
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
     	vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
@@ -33,7 +35,6 @@ export class Barchart {
 		//Extracting the first segment of the filter to be used for color later on
 		vis.xLabelSplit = vis.selectedXData.split('_');
 		vis.yLabelSplit = vis.selectedYData.split('_');
-
 
 		vis.title = d3.select(vis.div).append('h2')
 			.attr('id', 'title');
@@ -48,11 +49,11 @@ export class Barchart {
 			.text("Filters:");
 
 		//Initialize selectors for updating chart paramenters	
-		vis.xSelectorLabel = d3.select(vis.filtersPage).append('label')
+		vis.xSelectorLabel = vis.filtersPage.append('label')
 			.attr('for', 'xSelector')
 			.text('X-Axis Data: ');	
 
-		vis.xSelector = d3.select(vis.filtersPage).append('select')
+		vis.xSelector = vis.filtersPage.append('select')
 			.attr('id', 'xSelector');
 
 		vis.xSelector.selectAll('option')
@@ -62,11 +63,11 @@ export class Barchart {
 			.text(d => `${d.split('_')[0].charAt(0).toUpperCase() + d.split('_')[0].slice(1) + " " + d.split('_')[1].charAt(0).toUpperCase() + d.split("_")[1].slice(1)}`)
 			.attr('value', d => d);
 
-		vis.ySelectorLabel = d3.select(vis.filtersPage).append('label')
+		vis.ySelectorLabel = vis.filtersPage.append('label')
 			.attr('for', 'ySelector')
 			.text(' Y-Axis Data: ');
 
-		vis.ySelector = d3.select(vis.filtersPage).append('select')	
+		vis.ySelector = vis.filtersPage.append('select')	
 			.attr('id', 'ySelector');
 
 		vis.ySelector.selectAll('option')
@@ -76,11 +77,11 @@ export class Barchart {
 			.text(d => `${d.charAt(0).toUpperCase() + d.split('_')[0].slice(1) + " " + d.split('_')[1].charAt(0).toUpperCase() + d.split("_")[1].slice(1)}`)
 			.attr('value', d => d);
 
-		vis.sortSelectorLabel = d3.select(vis.filtersPage).append('label')
+		vis.sortSelectorLabel = vis.filtersPage.append('label')
 			.attr('for', 'sortSelector')
 			.text(' Sort: ');
 
-		vis.sortSelector = d3.select(vis.filtersPage).append('select')	
+		vis.sortSelector = vis.filtersPage.append('select')	
 			.attr('id', 'sortSelector');
 
 		vis.sortSelector.selectAll('option')
@@ -90,8 +91,22 @@ export class Barchart {
 			.text(d => `${d.charAt(0).toUpperCase() + d.slice(1)}`)
 			.attr('value', d => d);
 
-		//Add catwgory selectors
+		//Add category selectors
+		vis.catSelectorLabel = vis.filtersPage.append('label')
+			.attr('for', 'catSelector')
+			.text(' Category: ');
 
+		vis.catSelector = vis.filtersPage.append('select')
+			.attr('id', 'catSelector');
+
+		vis.catKeys = [...vis.cats.keys()];
+
+		vis.catSelector.selectAll('option')
+			.data(vis.catKeys)
+			.enter()
+			.append('option')
+			.text(d => d === 'cat0' ? 'all' : d)
+			.attr('value', d => d);
 
 		d3.select(vis.div).append('br');
 
@@ -179,24 +194,216 @@ export class Barchart {
 			vis.selectedSort = event.target.value;
 			vis.updateVis();
 		});	
+		d3.select('#catSelector').on('change', (event) => {
+			vis.selectedCat = event.target.value;
+			vis.updateVis();
+		});
 
 		vis.updateVis();
+	}
+
+	//Function for handling cross-vis interactivity with gallery
+	updateSelection(selectedBees) {
+		let vis = this;
+
+		vis.selectedBees = [];
+
+		selectedBees.forEach(bee => {
+			if (!vis.selectedBees.includes(bee)) {
+				vis.selectedBees.push(+bee);
+			} else {
+				return ;
+			}
+		});
+
+		vis.renderVis();
 	}
 
 	updateVis() {
 		let vis = this;
 
+		vis.xLabelSplit = vis.selectedXData.split('_');
+		vis.yLabelSplit = vis.selectedYData.split('_');
+
+		d3.select('#title').text(`Total Visit ${vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}  by ${vis.xLabelSplit[0].charAt(0).toUpperCase() + vis.xLabelSplit[0].slice(1) + " " + vis.xLabelSplit[1].charAt(0).toUpperCase() + vis.xLabelSplit[1].slice(1)}`);
+		d3.select('#x-label').text(`${vis.xLabelSplit[0].charAt(0).toUpperCase() + vis.xLabelSplit[0].slice(1) + " " + vis.xLabelSplit[1].charAt(0).toUpperCase() + vis.xLabelSplit[1].slice(1)}`);
+		d3.select('#y-label').text(`${vis.yLabelSplit[0].charAt(0).toUpperCase() + vis.yLabelSplit[0].slice(1) + " " + vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}`);
+
+		if (vis.selectedXData === 'bee_id') {
+
+			const selectedAttributes = vis.cats.get(vis.selectedCat);  
+
+			vis.aggregatedData = d3.rollups(
+				vis.data,
+				v => {
+
+					if (vis.selectedCat === 'cat0') {
+						return {
+							total_duration: [
+								d3.sum(v, d => d.visit_duration)
+							],
+							visit_count: [
+								v.length
+							],
+							color: utility.get_bee_color(v[0].bee_id)
+						};
+					}
+					else {
+						const durations = selectedAttributes.map(attr =>
+							d3.sum(
+								v.filter(item => item.category.includes(attr)),
+								d => d.visit_duration
+							)
+						);
+
+						const counts = selectedAttributes.map(attr =>
+							v.filter(item => item.category.includes(attr)).length
+						);
+
+						return {
+							total_duration: durations,
+							visit_count: counts,
+							color: utility.get_bee_color(v[0].bee_id)
+						};
+					}
+				},
+				d => d['bee_id']
+			);
+		}		
+		else {
+			vis.aggregatedData = d3.rollups(
+				vis.data, 
+			  		v => ({
+    					total_duration: [d3.sum(v, d => d.visit_duration)],
+    					visit_count: [v.length],
+						color: 'blue'
+  				}),
+				d => d['visited_flower'],
+			);
+		}
+
+		const yMax = d3.max(vis.aggregatedData, d => {
+    		const val = d[1][vis.selectedYData];
+
+    		return d3.max(val);
+		});
+
+		vis.yScale.domain([0, yMax])
+
+		if (vis.selectedCat === 'cat0') {
+			// Sort durations based on selected sort option
+			if (vis.selectedSort === 'ascending') {
+				vis.aggregatedData.sort((a, b) => d3.ascending(a[1][vis.selectedYData], b[1][vis.selectedYData]));
+			} else if (vis.selectedSort === 'descending') {
+				vis.aggregatedData.sort((a, b) => d3.descending(a[1][vis.selectedYData], b[1][vis.selectedYData]));
+			} else {
+				vis.aggregatedData.sort((a, b) => d3.ascending(+a[0], +b[0]));
+			}
+		}
+
+		vis.xScale.domain(vis.aggregatedData.map(d => d[0]));
 
 
+		vis.chartArea.selectAll('g.x-axis')
+			.transition().duration(750)
+			.call(vis.xAxis);
+
+		vis.chartArea.selectAll('g.y-axis')
+			.transition().duration(750)
+			.call(vis.yAxis);
+	
+	
 		vis.renderVis();
 	}
 
 	renderVis() {
 		let vis = this;
 
+		if (!vis.tooltip) {
+			vis.tooltip = d3.select('body').append('div')
+				.attr('class', 'tooltip')
+				.style('position', 'absolute')
+				.style('visibility', 'hidden')
+				.style('background', 'white')
+				.style('border', '1px solid #ccc')
+				.style('padding', '5px')
+				.style('font-size', '12px');  
+		}
+		
+		const barGroup = vis.chartArea.selectAll('.barGroup')
+			.data(vis.aggregatedData, d => d[0]);
+
+		const barGroupEnter = barGroup.enter()
+			.append('g')
+			.attr('class', 'barGroup');
+
+		const barGroupMerged = barGroupEnter.merge(barGroup)
+    		.attr('transform', g => `translate(${vis.xScale(g[0])}, 0)`);  // fix spelling
+
+		barGroupMerged.each(function([id, dataObj]) {
+    		const group = d3.select(this);
 
 
+			const barData = vis.selectedCat === 'cat0'
+    			? [{ 
+        			value: dataObj[vis.selectedYData][0], 
+        			color: dataObj.color 
+      			}]
+    			: vis.cats.get(vis.selectedCat).map((attrName, i) => ({
+        			value: dataObj[vis.selectedYData][i],
+        			color: dataObj.color,          
+        			attrIndex: i + 1,
+					attrName: attrName
+    			}));
 
+    		const bars = group.selectAll('.bar')
+        		.data(barData);
+
+			const barWidth = vis.xScale.bandwidth() / barData.length;
+
+			bars.join(
+    			enter => enter.append('rect')
+        			.attr('class', 'bar')
+					.attr('x', (d, i) => i * (vis.xScale.bandwidth() / barData.length))
+					.attr('y', d => vis.yScale(d.value))
+					.attr('width', vis.xScale.bandwidth() / barData.length)
+        			.attr('height', d => vis.height - vis.yScale(d.value))
+					.attr('stroke', 'black')
+        			.style('fill', d => {
+						if (vis.selectedCat === 'cat0') {
+							return utility.getCssVar(`--primary-${d.color}`)
+						} else {
+							return utility.getCssVar(`--attr${d.attrIndex}`)
+						}
+					})
+        			.on('mouseover', (event, d) => {
+            			vis.tooltip.style('visibility', 'visible')
+                		.html(`Duration: ${d.value.toFixed(1)}`);
+        			})
+        			.on('mousemove', event => {
+            			vis.tooltip
+                			.style('top', `${event.pageY - 10}px`)
+                			.style('left', `${event.pageX + 10}px`);
+        			})
+        			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden')),
+
+    			update => update
+        			.transition().duration(750)
+					.attr('x', (d, i) => i * (vis.xScale.bandwidth() / barData.length))
+					.attr('width', vis.xScale.bandwidth() / barData.length)
+        			.attr('y', d => vis.yScale(d.value))
+        			.attr('height', d => vis.height - vis.yScale(d.value))
+        			.style('fill', d => {
+						if (vis.selectedCat === 'cat0') {
+							return utility.getCssVar(`--primary-${d.color}`)
+						} else {
+							return utility.getCssVar(`--attr${d.attrIndex}`)
+						}
+					}),
+
+    			exit => exit.remove()
+			);
+		});
 	}
 
 	renderLegend() {
