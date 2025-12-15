@@ -6,7 +6,7 @@ export class Barchart {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
 			containerHeight: 350,
-			margin: {top: 20, right: 20, bottom: 40, left: 75},
+			margin: {top: 50, right: 20, bottom: 40, left: 75},
 		};
 		this.data = _data;
 		this.cats = _cats;
@@ -227,12 +227,13 @@ export class Barchart {
 		d3.select('#title').text(`Total Visit ${vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}  by ${vis.xLabelSplit[0].charAt(0).toUpperCase() + vis.xLabelSplit[0].slice(1) + " " + vis.xLabelSplit[1].charAt(0).toUpperCase() + vis.xLabelSplit[1].slice(1)}`);
 		d3.select('#x-label').text(`${vis.xLabelSplit[0].charAt(0).toUpperCase() + vis.xLabelSplit[0].slice(1) + " " + vis.xLabelSplit[1].charAt(0).toUpperCase() + vis.xLabelSplit[1].slice(1)}`);
 		d3.select('#y-label').text(`${vis.yLabelSplit[0].charAt(0).toUpperCase() + vis.yLabelSplit[0].slice(1) + " " + vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}`);
-
+		//Rollup data based on the bar key.
 		if (vis.selectedXData === 'bee_id') {
 			const selectedAttributes = vis.cats.get(vis.selectedCat);  
 			vis.aggregatedData = d3.rollups(
 				vis.data,
 				v => {
+					//Base case: Aggregate all visits and durations into 1.
 					if (vis.selectedCat === 'cat0') {
 						return {
 							total_duration: [
@@ -244,6 +245,7 @@ export class Barchart {
 							color: utility.get_bee_color(v[0].bee_id)
 						};
 					}
+					//Multiple attribute case: Aggregate visits and durations based on attribute in category.
 					else {
 						const durations = selectedAttributes.map(attr =>
 							d3.sum(
@@ -317,7 +319,9 @@ export class Barchart {
         		.property("disabled", false)
         		.style("opacity", 1);
 		}
+
 	
+		vis.renderLegend();
 		vis.renderVis();
 	}
 
@@ -370,7 +374,6 @@ export class Barchart {
     		const bars = group.selectAll('.bar')
         		.data(barData);
 
-
 			const barWidth = vis.xScale.bandwidth() / barData.length;
 
 			bars.join(
@@ -391,7 +394,9 @@ export class Barchart {
         			.on('mouseover', (event, d) => {
             			vis.tooltip.style('visibility', 'visible')
                 		.html(`
-							<strong>${vis.yLabelSplit[0].charAt(0).toUpperCase() + vis.yLabelSplit[0].slice(1) + " " + vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}:</strong> ${d[vis.selectedYData].toFixed(2)}<br/>
+							<strong>${vis.yLabelSplit[0].charAt(0).toUpperCase() + vis.yLabelSplit[0].slice(1) + " " + 
+										vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}:</strong> 
+										${d[vis.selectedYData].toFixed(2)}<br/>
 							<strong>Attribute:</strong>	${d.attrName}<br/>
 						`);
         			})
@@ -421,8 +426,44 @@ export class Barchart {
 		});
 	}
 
-	renderLegend() {
-		let vis = this;
+renderLegend() {
+	let vis = this;
 
-	}
+	vis.svg.selectAll(".legend-group").remove();
+
+	if (vis.selectedCat === "cat0") return;
+
+	const selectedAttributes = vis.cats.get(vis.selectedCat);
+	if (!selectedAttributes || selectedAttributes.length === 0) return;
+
+	const legendY = 15; 
+	const legendX = vis.config.margin.left;
+
+	const legend = vis.svg.append("g")
+		.attr("class", "legend-group")
+		.attr("transform", `translate(${legendX}, ${legendY})`);
+
+	selectedAttributes.forEach((attr, i) => {
+
+		const colorVar = utility.getCssVar(`--attr${i + 1}`);
+		const color = colorVar || "gray";
+
+		const g = legend.append("g")
+			.attr("transform", `translate(${i * 120}, 0)`);
+
+		g.append("rect")
+			.attr("width", 14)
+			.attr("height", 14)
+			.attr("fill", color)
+			.attr("stroke", "#333");
+
+		g.append("text")
+			.attr("x", 20)
+			.attr("y", 12)
+			.style("font-size", "12px")
+			.text(attr);
+	});
+}
+
+
 }

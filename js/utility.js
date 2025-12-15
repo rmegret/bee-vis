@@ -41,8 +41,8 @@ export function get_bee_color(bee) {
 	switch (bee) {
 		case 1: return 'red';
 		case 2: return 'green';
-		case 3: return 'yellow';
-		case 4: return 'blue';
+		case 3: return 'blue';
+		case 4: return 'yellow';
 		case 5: return 'lilac';
 		case 6: return 'white';
 		default: return 'gray';

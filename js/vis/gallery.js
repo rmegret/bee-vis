@@ -1,7 +1,7 @@
 import * as utility from "../utility.js"
 
 export class Gallery {
-	constructor(_config, _data){
+	constructor(_config, _data, _gui){
 		this.config = {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
@@ -9,6 +9,7 @@ export class Gallery {
 			margin: {top: 5, right: 5, bottom: 5, left: 5},		
 		};
 		this.data = _data;
+		this.gui = _gui;
 		this.div = _config.parentElement;
 		this.selectedBees = [];
 		this.initVis();
@@ -24,8 +25,23 @@ export class Gallery {
 			.style('width', 'fit-content')
 			.style('height', 'auto')
 
-		vis.data = vis.data.filter(d => +d.bee_id !== -1)
-	
+		vis.data = Array.from(
+			d3.group(vis.data, d => d.bee_id),
+			([bee_id, visits]) => visits[0]
+		);
+
+		vis.data = vis.data.filter(d =>
+			Number.isFinite(+d.bee_id) &&
+			+d.bee_id > 0
+		);
+
+		vis.data.forEach(d => {
+			const beeColor = utility.get_bee_color(+d.bee_id);
+			d._beeColorName = beeColor;
+			d._beeCssColor =
+				utility.getCssVar(`--primary-${beeColor}`) || beeColor || "gray";
+		});
+			
 		vis.xScale = d3.scaleBand()
 			.domain(
 			[...new Set(vis.data
@@ -60,11 +76,11 @@ export class Gallery {
 				d3.selectAll('.img')
 					.style('filter', 'none');
 				
-				if (gui.barchart.selectedXFilter == 'bee_id') {
-					gui.barchart.updateSelection(vis.selectedBees);
+				if (vis.gui.barchart.selectedXData == 'bee_id') {
+					vis.gui.barchart.updateSelection(vis.selectedBees);
 				}
-				gui.patchview.updateVis(vis.selectedBees);
-				gui.chronogram.updateVis(vis.selectedBees);
+				//vis.gui.patchview.updateVis(vis.selectedBees);
+				vis.gui.chronogram.updateSelection(vis.selectedBees);
 			});
 
 		vis.updateVis();	
@@ -100,7 +116,7 @@ export class Gallery {
 		images.enter().append('image')
 			.attr('class', 'img')
 			.merge(images)
-			.attr('href', d => `data/gift_for_pablo/bee_images/${d.images[0]}`)
+			.attr('href', d => d.filepath)
 			.attr('x', d => vis.xScale(d.bee_id))
 			.attr('y', 0)
 			.attr('width', vis.xScale.bandwidth())
@@ -111,10 +127,10 @@ export class Gallery {
 				.html(`
 					<div>
 						<strong>Bee ID: </strong>${d.bee_id}<br/>
-						<strong>Paint Color: </strong>${d.bee_color}<br/>
+						<strong>Paint Color: </strong>${d._beeColorName}<br/>
 					</div>
 					<div>
-						<img src='data/newdata/captures/${d.images[0]}'>
+						<img src='${d.filepath}'>
 					</div>
 				`);
 			})
@@ -132,14 +148,21 @@ export class Gallery {
 				}
 				else {
 					vis.selectedBees.push(+d.bee_id);
-					d3.select(this)
-						.style('filter', 'drop-shadow(0 0 10px rgba(255, 0, 100, 0.8))');
+					if (d.bee_id == 6) {
+						d3.select(this)
+							.style('filter',d => `drop-shadow(0 0 8px black)`);
+
+					}
+					else {
+						d3.select(this)
+							.style('filter',d => `drop-shadow(0 0 8px ${d._beeCssColor})`);
+					}
 				}
-				if (gui.barchart.selectedXFilter == 'bee_id') {
-					gui.barchart.updateSelection(vis.selectedBees);
+				if (vis.gui.barchart.selectedXData == 'bee_id') {
+					vis.gui.barchart.updateSelection(vis.selectedBees);
 				}
-				gui.patchview.updateVis(vis.selectedBees);
-				gui.chronogram.updateVis(vis.selectedBees);
+				//gui.patchview.updateVis(vis.selectedBees);
+				vis.gui.chronogram.updateSelection(vis.selectedBees);
 			});
 	}
 }

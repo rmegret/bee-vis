@@ -1,8 +1,8 @@
 import { convert_columns_to_number, join_data, get_bee_image } from "./utility.js";
 import { Chronogram } from "./vis/chronogram.js"
 import { Barchart } from "./vis/barchart.js"
-//import { Patchview } from "./vis/patchview.js"
-//import { Gallery } from "./vis/gallery.js"
+import { Patchview } from "./vis/patchview.js"
+import { Gallery } from "./vis/gallery.js"
 
 
 //Global variable for entire vis
@@ -80,7 +80,7 @@ async function show_chronogram(dataframe, catMap) {
 async function show_gallery(dataframe) {
     gui.gallery = new Gallery({
         parentElement: '#gallery',
-    }, dataframe);
+    }, dataframe, gui);
 
     return true;
 }
@@ -92,7 +92,7 @@ async function show_barchart(dataframe, catMap) {
 
 	return true;
 }
-/*
+
 async function show_patchview(dataframe, catMap) {
   	gui.patchview = new Patchview({
     	parentElement: '#patchview',
@@ -100,7 +100,7 @@ async function show_patchview(dataframe, catMap) {
 
   return true;
 }
-*/
+
 
 async function show_visualization() {		
 	clear_main();
@@ -112,10 +112,10 @@ async function show_visualization() {
 	d3.select(".exp_title")
 		.text(`Experiment: ${dataframe[0].experiment_name}`);
 
-//	await show_chronogram(dataframe, catMap);
+	await show_chronogram(dataframe, catMap);
 	await show_barchart(dataframe, catMap);
-	//await show_patchview(dataframe, catMap);
-	//await show_gallery(dataframe);
+	await show_patchview(dataframe, catMap);
+	await show_gallery(dataframe);
 
 }
 
@@ -145,6 +145,10 @@ TO DO:
 - REFORMAT TIMESTAMP IN VISIT TO HOUR/MINUTE/SECOND FORMAT
 - REFACTOR PATCHVIEW (SPECIFICALLY UPDATE FUNCTION)
 - MODULAR VISUALIZATIONS THAT CAN BE ADDED OR REMOVED
+
+
+- FFMPEG repackage video to be more efficient in chrome
+
 
 */
 
