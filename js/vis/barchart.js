@@ -106,7 +106,6 @@ export class Barchart {
 			.attr('value', d => d);
 		//Selectors END
 
-
 		d3.select(vis.div).append('br');
 
 		//Default case for rollup is bee_id. Can be changed in update
@@ -299,7 +298,6 @@ export class Barchart {
 
 		vis.xScale.domain(vis.aggregatedData.map(d => d[0]));
 
-
 		vis.chartArea.selectAll('g.x-axis')
 			.transition().duration(750)
 			.call(vis.xAxis);
@@ -319,7 +317,6 @@ export class Barchart {
         		.property("disabled", false)
         		.style("opacity", 1);
 		}
-
 	
 		vis.renderLegend();
 		vis.renderVis();

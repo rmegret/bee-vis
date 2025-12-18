@@ -1,16 +1,13 @@
 import * as utility from "../utility.js";
 
 export class Patchview {
-	constructor(_config, _data, _gui) {
+	constructor(_config, _data) {
 		this.config = {
 			parentElement: _config.parentElement,
-			containerWidth: 710,
-			containerHeight: 710,
-			margin: { top: 20, right: 20, bottom: 20, left: 50 },
+			containerWidth: 704,
+			containerHeight: 704,
 		};
-
 		this.data = _data;
-		this.gui = _gui;
 		this.selectedBees = [];
 		this.div = _config.parentElement;
 
@@ -25,16 +22,21 @@ export class Patchview {
 			.style('display', 'inline-block')
 			.style('margin-left', '50px')
 
-		// ---- VIDEO ----
-		vis.video = d3.select(vis.div).append("video")
-			.attr("width", vis.config.containerWidth)
-			.attr("height", vis.config.containerHeight)
-			.attr("muted", true)
-			.attr("controls", true);
+		//If video exists, append video
+			vis.video = d3.select(vis.div).append("video")
+				.attr("width", vis.config.containerWidth)
+				.attr("height", vis.config.containerHeight)
+				.attr("muted", true)
+				.attr("controls", true);
 
 		vis.video.append("source")
 			.attr("src", "data/b1_8MP_2025-06-03_11-10-31_3.cfr.mp4")
 			.attr("type", "video/mp4");
+
+		//If no video exists, render image instead
+
+
+		//If neither exist, console log error and don't render the view
 
 		// ---- SVG OVERLAY ----
 		vis.svg = d3.select(vis.div).append("svg")
@@ -47,11 +49,11 @@ export class Patchview {
 
 		// ---- SCALES ----
 		vis.xScale = d3.scaleLinear()
-			.domain([0, 1920])
+			.domain([0, 2816])
 			.range([0, vis.config.containerWidth]);
 
 		vis.yScale = d3.scaleLinear()
-			.domain([0, 1920])
+			.domain([0, 2816])
 			.range([0, vis.config.containerHeight]);
 
 		vis.curve = d3.line().curve(d3.curveNatural);

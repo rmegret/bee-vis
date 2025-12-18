@@ -6,7 +6,7 @@ export class Gallery {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
 			containerHeight: 90,
-			margin: {top: 5, right: 5, bottom: 5, left: 5},		
+			margin: {top: 10, right: 5, bottom: 5, left: 5},		
 		};
 		this.data = _data;
 		this.gui = _gui;
@@ -79,7 +79,7 @@ export class Gallery {
 				if (vis.gui.barchart.selectedXData == 'bee_id') {
 					vis.gui.barchart.updateSelection(vis.selectedBees);
 				}
-				//vis.gui.patchview.updateVis(vis.selectedBees);
+				vis.gui.patchview.updateVis(vis.selectedBees);
 				vis.gui.chronogram.updateSelection(vis.selectedBees);
 			});
 
@@ -148,12 +148,15 @@ export class Gallery {
 				}
 				else {
 					vis.selectedBees.push(+d.bee_id);
-					if (d.bee_id == 6) {
+
+					//If bee is white, black drop shadow
+					if (d.bee_id == 6) { 
 						d3.select(this)
 							.style('filter',d => `drop-shadow(0 0 8px black)`);
-
 					}
-					else {
+
+					//Apply corresponding drop shadow to all other bees
+					else { 
 						d3.select(this)
 							.style('filter',d => `drop-shadow(0 0 8px ${d._beeCssColor})`);
 					}
@@ -161,9 +164,8 @@ export class Gallery {
 				if (vis.gui.barchart.selectedXData == 'bee_id') {
 					vis.gui.barchart.updateSelection(vis.selectedBees);
 				}
-				//gui.patchview.updateVis(vis.selectedBees);
+				vis.gui.patchview.updateVis(vis.selectedBees);
 				vis.gui.chronogram.updateSelection(vis.selectedBees);
 			});
 	}
 }
-

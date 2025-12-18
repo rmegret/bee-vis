@@ -198,6 +198,10 @@ export class Chronogram {
 			vis.updateVis();
 		});
 
+		
+		//select chart area for timeframe selection
+
+
 		vis.updateVis();
 	}
 
@@ -257,8 +261,8 @@ export class Chronogram {
 		vis.yScale.domain(visibleBees);
 
 		// Reset zoom
-		vis.xScale.domain([0, vis.maxEndStamp]);
-		vis.svg.transition().duration(0).call(vis.zoom.transform, d3.zoomIdentity);
+		//vis.xScale.domain([0, vis.maxEndStamp]);
+		//vis.svg.transition().duration(0).call(vis.zoom.transform, d3.zoomIdentity);
 
 		vis.chartArea.select(".x-axis").call(vis.xAxis);
 		vis.chartArea.select(".y-axis").call(vis.yAxis);
@@ -375,6 +379,36 @@ export class Chronogram {
 						const startOffset = d.timestamp_start - vis.videoStart;
 						const endOffset = d.timestamp_end - vis.videoStart;
 						return vis.xScale(endOffset) - vis.xScale(startOffset);
+					})					
+					.attr("fill", d => {
+						// --- CASE 1: Category = cat0 → color by bee ---
+						if (vis.selectedCat === "cat0") {
+							const beeColor = utility.get_bee_color(+d.bee_id);
+							const cssColor = utility.getCssVar(`--primary-${beeColor}`);
+							return cssColor || beeColor || "gray";
+						}
+
+						// --- CASE 2: Category filter active → color by attribute ---
+						if (d.category && d.category.length > 0) {
+							const attr = d.category[0];
+
+							// find which attr index it corresponds to
+							let attrIndex = null;
+							for (const [catKey, attrs] of vis.cats.entries()) {
+								if (catKey === "cat0") continue;
+								attrs.forEach((a, i) => {
+									if (a === attr) attrIndex = i + 1; // CSS variables are 1-indexed
+								});
+							}
+
+							if (attrIndex !== null) {
+								const cssColor = utility.getCssVar(`--attr${attrIndex}`);
+								if (cssColor) return cssColor;
+							}
+						}
+
+						// fallback if something unexpected happens
+						return "gray";
 					}),
 
 				exit => exit.remove()
