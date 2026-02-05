@@ -6,7 +6,7 @@ import { Gallery } from "./vis/gallery.js"
 
 
 //Global variable for entire vis
-var gui = {}
+var gui = {};
 
 // Global variables for current file paths
 var data_dir = 'data/gift_for_pablo/';
@@ -143,9 +143,8 @@ function clear_vis_container() {
 TO DO:
 
 - MODULAR VISUALIZATIONS THAT CAN BE ADDED OR REMOVED
-- d3 dispatch for module callbacks. 
 - Top level handler for callbacks
-- Timeframe selection global change on data`
+- Timeframe selection global change on data
 - Current timestamp line on chronogram
 - Account for multiple videos in chronogram
 - Clean up timestamp handling 

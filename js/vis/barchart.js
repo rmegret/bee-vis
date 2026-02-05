@@ -1,7 +1,7 @@
 import * as utility from "../utility.js"
 
 export class Barchart {
-	constructor(_config, _data, _cats) {
+	constructor(_config, _data, _cats, _dispatcher) {
 		this.config = {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
@@ -10,15 +10,20 @@ export class Barchart {
 		};
 		this.data = _data;
 		this.cats = _cats;
+		this.dispatcher = _dispatcher;
 		this.div = this.config.parentElement;
+
 		this.selectedBees = [];
+
 		this.xFilters = ['bee_id', 'visited_flower'];
 		this.yFilters = ['visit_count', 'total_duration'];
 		this.sorts = ['default', 'ascending', 'descending'];
+
 		this.selectedXData = 'bee_id';
 		this.selectedYData = 'visit_count';
 		this.selectedCat = 'cat0';
 		this.selectedSort = 'default';
+
 		this.initVis();
 	}
 

@@ -1,16 +1,17 @@
 import * as utility from '../utility.js';
 
 export class Chronogram {
-	constructor(_config, _data, _cats) {
+	constructor(_config, _data, _cats, _dispatcher) {
 		this.config = {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
 			containerHeight: 375,
-			margin: { top: 50, right: 10, bottom: 70, left: 75 }
+			margin: { top: 50, right: 10, bottom: 80, left: 75 }
 		};
 
 		this.data = _data;
 		this.cats = _cats;
+		this.dispatcher = _dispatcher;
 		this.div = this.config.parentElement;
 
 		this.selectedCat = 'cat0';
@@ -87,7 +88,11 @@ export class Chronogram {
 		vis.videoStart = d3.min(vis.data, d => d.timestamp_start);
 		vis.videoEnd = d3.max(vis.data, d => d.timestamp_end);
 		vis.maxEndStamp = vis.videoEnd - vis.videoStart;
+		
+		// Defalt timeframe selection
+		vis.selectedTimes = [0, vis.maxEndStamp];
 
+		// Scales
 		vis.xScale = d3.scaleLinear()
 			.domain([0, vis.maxEndStamp])
 			.range([0, vis.width]);
@@ -208,8 +213,7 @@ export class Chronogram {
 		// Initialize timeline group
 		vis.timeline = vis.svg.append('g')
 			.attr('class', 'timeline-group')
-			.attr('transform', `translate(${vis.config.margin.left}, ${vis.config.containerHeight - 40})`);
-
+			.attr('transform', `translate(${vis.config.margin.left}, ${vis.config.containerHeight - 50})`);
 
 		vis.timelineRect = vis.timeline.append('rect')
 			.attr('class', 'timeline-rect')
@@ -217,6 +221,12 @@ export class Chronogram {
 			.attr('height', 30)
 			.style('fill', 'white')
 			.style('stroke', 'gray');
+
+		vis.timeline.append('g')
+			.attr('class', 'x-axis')
+			.attr('transform', `translate(0, 30)`)
+			.call(vis.xAxis);
+
 		
 		// Left side line
 		vis.timeframeSelectorA = vis.timeline.append('line')
@@ -226,9 +236,8 @@ export class Chronogram {
 			.attr('y1', -5)
 			.attr('y2', 35)
 			.attr('stroke', '#333')
-			.attr('stroke-width', 3)
-			.attr('stroke');
-		
+			.attr('stroke-width', 3);
+	
 		// Right side line
 		vis.timeframeSelectorB = vis.timeline.append('line')
 			.attr('class', 'selector-line')
@@ -239,96 +248,40 @@ export class Chronogram {
 			.attr('stroke', '#333')
 			.attr('stroke-width', 3);
 
+		const drag = d3.drag()
+			.on('drag', function(event) {
+				const mouseX = Math.max(0, Math.min(vis.width, event.x));
+				const isLeft = d3.select(this).classed('left-selector');
 
+				if (isLeft) {
+					const rightX = +vis.timeframeSelectorB.attr('x1');
+					const finalX = Math.min(mouseX, rightX - 5);
+				
+					vis.timeframeSelectorA.attr('x1', finalX).attr('x2', finalX);
+					vis.selectedTimes[0] = vis.xScale.invert(finalX);
+				}
+				else {
+					const leftX = +vis.timeframeSelectorA.attr('x1');
+					const finalX = Math.max(mouseX, leftX + 5);
 
-/* OLD TIMEFRAME SELECTION CODE
-		// Vertical hover line
-		vis.hoverLine = vis.chartArea.append('line')
-			.attr('class', 'hover-line')
-			.attr('y1', 0)
-			.attr('y2', vis.height)
-			.attr('stroke', '#333')
-			.attr('stroke-width', 1)
-			.attr('stroke-dasharray', '4 4')
-			.style('pointer-events', 'none')
-			.style('opacity', 0);
-
-	
-		// First selection line
-		vis.selectionLineA = vis.chartArea.append('line')
-			.attr('class', 'selection-line')
-			.attr('y1', 0)
-			.attr('y2', vis.height)
-			.attr('stroke', '#1976d2')
-			.attr('stroke-width', 2)
-			.style('pointer-events', 'none')
-			.style('opacity', 0);
-
-		// Second selection line
-		vis.selectionLineB = vis.chartArea.append('line')
-			.attr('class', 'selection-line')
-			.attr('y1', 0)
-			.attr('y2', vis.height)
-			.attr('stroke', '#d32f2f')
-			.attr('stroke-width', 2)
-			.style('pointer-events', 'none')
-			.style('opacity', 0);
-
-		vis.mouseOverlay = vis.chartArea.append('rect')
-			.attr('width', vis.width)
-			.attr('height', vis.height)
-			.attr('fill', 'none')
-			.attr('pointer-events', 'all');
-
-		vis.chartArea
-			.on('mousemove', event => {
-				const [mouseX] = d3.pointer(event);
-				const x = Math.max(0, Math.min(vis.width, mouseX));
-
-				vis.hoverLine
-					.attr('x1', x)
-					.attr('x2', x)
-					.style('opacity', 1);
-			})
-
-			.on('mouseleave', () => {
-				vis.hoverLine.style('opacity', 0);
-			})
-
-			.on('click', event => {
-				const [mouseX] = d3.pointer(event);
-				const x = Math.max(0, Math.min(vis.width, mouseX));
-
-				const time = vis.xScale.invert(x);
-
-				// Reset after two selections
-				if (vis.selectedTimes.length === 2) {
-					vis.selectedTimes = [];
-					vis.selectionLineA.style('opacity', 0);
-					vis.selectionLineB.style('opacity', 0);
-					return
+					vis.selectedTimes[1] = vis.xScale.invert(finalX);			
+					vis.timeframeSelectorB.attr('x1', finalX).attr('x2', finalX);
 				}
 
-				vis.selectedTimes.push(time);
-
-				if (vis.selectedTimes.length === 1) {
-					vis.selectionLineA
-						.attr('x1', x)
-						.attr('x2', x)
-						.style('opacity', 1);
-				}
-
-				if (vis.selectedTimes.length === 2) {
-					vis.selectionLineB
-						.attr('x1', x)
-						.attr('x2', x)
-						.style('opacity', 1);
-				}
-
-				console.log('Selected timestamps:', vis.selectedTimes);
+				console.log(vis.selectedTimes)
+				vis.onTimelineUpdate();
 			});
 
-*/
+		vis.timeframeSelectorA
+        	.classed('left-selector', true)
+        	.style('cursor', 'ew-resize')
+        	.call(drag);
+
+    	vis.timeframeSelectorB
+        	.classed('right-selector', true)
+        	.style('cursor', 'ew-resize')
+        	.call(drag);
+
 
 		vis.chartContent = vis.chartArea.append('g')
 			.attr('class', 'chart-content')
@@ -337,6 +290,12 @@ export class Chronogram {
 
 		vis.updateVis();
 	}
+
+	onTimelineUpdate() {
+		
+
+	}
+
 
 	updateSelection(selectedBees) {
 		let vis = this;
@@ -611,4 +570,3 @@ export class Chronogram {
 		});
 	}
 }
-

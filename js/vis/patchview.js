@@ -1,15 +1,17 @@
 import * as utility from "../utility.js";
 
 export class Patchview {
-	constructor(_config, _data) {
+	constructor(_config, _data, _dispatcher) {
 		this.config = {
 			parentElement: _config.parentElement,
 			containerWidth: 704,
 			containerHeight: 704,
 		};
 		this.data = _data;
-		this.selectedBees = [];
+		this.dispatcher = _dispatcher;
 		this.div = _config.parentElement;
+		
+		this.selectedBees = [];
 
 		this.initVis();
 	}

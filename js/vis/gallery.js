@@ -1,7 +1,7 @@
 import * as utility from "../utility.js"
 
 export class Gallery {
-	constructor(_config, _data, _gui){
+	constructor(_config, _data, _gui, _dispatcher){
 		this.config = {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
@@ -9,6 +9,7 @@ export class Gallery {
 			margin: {top: 10, right: 5, bottom: 5, left: 5},		
 		};
 		this.data = _data;
+		this.dispatcher = _dispatcher;
 		this.gui = _gui;
 		this.div = _config.parentElement;
 		this.selectedBees = [];
