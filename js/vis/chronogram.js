@@ -5,7 +5,7 @@ export class Chronogram {
 		this.config = {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
-			containerHeight: 375,
+			containerHeight: 350,
 			margin: { top: 50, right: 10, bottom: 80, left: 75 }
 		};
 
@@ -156,7 +156,19 @@ export class Chronogram {
 				const clampedMin = Math.max(0, min);
 				const clampedMax = Math.min(vis.maxEndStamp, max);
 				vis.xScale.domain([clampedMin, clampedMax]);
+
 				vis.chartArea.select('.x-axis').call(vis.xAxis);
+				//vis.timeline.select('.x-axis').call(vis.xAxis);
+
+				const start = vis.videoStart + vis.xScale.invert(vis.leftHandleX);
+				const end = vis.videoStart + vis.xScale.invert(vis.rightHandleX);
+
+				vis.dispatcher.call(
+					"timeRangeChanged",
+					this,
+					[start, end]
+				);
+
 				vis.renderVis();
 			});
 
@@ -226,10 +238,13 @@ export class Chronogram {
 			.style('fill', 'white')
 			.style('stroke', 'gray');
 
+		// Timeline Axis
+/*
 		vis.timeline.append('g')
 			.attr('class', 'x-axis')
 			.attr('transform', `translate(0, 30)`)
 			.call(vis.xAxis);
+*/
 
 		// Timeline handles
 		vis.leftHandleX = 0;
@@ -265,7 +280,8 @@ export class Chronogram {
 					vis.timeframeSelectorA
 						.attr("x1", vis.leftHandleX)
 						.attr("x2", vis.leftHandleX);
-				} else {
+				} 
+				else {
 					vis.rightHandleX = Math.max(mouseX, vis.leftHandleX + 5);
 					vis.timeframeSelectorB
 						.attr("x1", vis.rightHandleX)
@@ -371,8 +387,11 @@ export class Chronogram {
 		//vis.xScale.domain([0, vis.maxEndStamp]);
 		//vis.svg.transition().duration(0).call(vis.zoom.transform, d3.zoomIdentity);
 
+		// Redefine Axes
 		vis.chartArea.select('.x-axis').call(vis.xAxis);
 		vis.chartArea.select('.y-axis').call(vis.yAxis);
+
+		//vis.timeline.select('.x-axis').call(vis.xAxis);
 
 		vis.renderLegend();
 		vis.renderVis();

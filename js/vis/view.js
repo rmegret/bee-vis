@@ -81,7 +81,6 @@ export class View {
 		// Time range selection (from Chronogram)
 		vis.dispatcher.on("timeRangeChanged.view", timeRange => {
 			vis.timeRange = timeRange;
-			console.log(vis.timeRange);
 			vis.propagateFilters();
 		});
 
