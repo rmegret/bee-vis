@@ -8,7 +8,7 @@ export class View {
 		this.data = data;
 		this.catMap = catMap;
 
-		// Global interaction state (single source of truth)
+		// Global states
 		this.selectedBees = [];
 		this.timeRange = null;
 
@@ -20,7 +20,6 @@ export class View {
 		);
 
 		// All active visualization instances
-		// { type, instance }
 		this.views = [];
 
 		this.initViews();
@@ -28,83 +27,91 @@ export class View {
 	}
 
 	initViews() {
-		this.addView(
+		let vis = this;
+
+		vis.addView(
 			"chronogram",
 			new Chronogram(
 				{ parentElement: "#chronogram" },
-				this.data,
-				this.catMap,
-				this.dispatcher
+				vis.data,
+				vis.catMap,
+				vis.dispatcher
 			)
 		);
 
-		this.addView(
+		vis.addView(
 			"barchart",
 			new Barchart(
 				{ parentElement: "#bar" },
-				this.data,
-				this.catMap,
-				this.dispatcher
+				vis.data,
+				vis.catMap,
+				vis.dispatcher
 			)
 		);
 
-		this.addView(
+		vis.addView(
 			"patchview",
 			new Patchview(
 				{ parentElement: "#patchview" },
-				this.data,
-				this.catMap,
-				this.dispatcher
+				vis.data,
+				vis.catMap,
+				vis.dispatcher
 			)
 		);
 
-		this.addView(
+		vis.addView(
 			"gallery",
 			new Gallery(
 				{ parentElement: "#gallery" },
-				this.data,
-				this.dispatcher
+				vis.data,
+				vis.dispatcher
 			)
 		);
 	}
 
 	initDispatchHandlers() {
+		let vis = this;		
+
 		// Bee selection (from Gallery)
-		this.dispatcher.on("selectionChanged.view", selectedBees => {
-			this.selectedBees = selectedBees;
-			this.propagateFilters();
+		vis.dispatcher.on("selectionChanged.view", selectedBees => {
+			vis.selectedBees = selectedBees;
+			vis.propagateFilters();
 		});
 
 		// Time range selection (from Chronogram)
-		this.dispatcher.on("timeRangeChanged.view", timeRange => {
-			this.timeRange = timeRange;
-			console.log(this.timeRange);
-			this.propagateFilters();
+		vis.dispatcher.on("timeRangeChanged.view", timeRange => {
+			vis.timeRange = timeRange;
+			console.log(vis.timeRange);
+			vis.propagateFilters();
 		});
 
 		// Global reset
-		this.dispatcher.on("resetSelection.view", () => {
-			this.selectedBees = [];
-			this.timeRange = null;
-			this.propagateFilters();
+		vis.dispatcher.on("resetSelection.view", () => {
+			vis.selectedBees = [];
+			vis.timeRange = null;
+			vis.propagateFilters();
 		});
 	}
 
 	propagateFilters() {
+		let vis = this;
+
 		const filterState = {
-			selectedBees: this.selectedBees,
-			timeRange: this.timeRange
+			selectedBees: vis.selectedBees,
+			timeRange: vis.timeRange
 		};
 
-		this.views.forEach(v => {
-			if (typeof v.instance.updateFilters === "function") {
-				v.instance.updateFilters(filterState);
+		vis.views.forEach(view => {
+			if (typeof view.instance.updateFilters === "function") {
+				view.instance.updateFilters(filterState);
 			}
 		});
 	}
 
 	addView(type, instance) {
-		this.views.push({ type, instance });
+		let vis = this;
+
+		vis.views.push({ type, instance });
 	}
 }
 
