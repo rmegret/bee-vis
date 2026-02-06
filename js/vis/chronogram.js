@@ -15,16 +15,29 @@ export class Chronogram {
 		this.div = this.config.parentElement;
 
 		this.selectedCat = 'cat0';
-		this.selectedAttr = 'all';
-		this.selectedBees = [];
+		this.selectedAttr = 'all';	
 
-		this.selectedTimes = [];
+		this.selectedBees = [];
+		this.timeRange = null;
+
+		this.leftHandleX = 0;
+		this.rightHandleX = null;
 
 		this.initVis();
 	}
 
 	initVis() {
 		let vis = this;
+
+		// Dimensions
+		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
+		vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
+
+		// Strict filter of invalid bees
+		vis.data = vis.data.filter(d =>
+			Number.isFinite(+d.bee_id) &&
+			+d.bee_id > 0
+		);
 
 		// Title
 		vis.title = d3.select(vis.div).append('h2')
@@ -74,15 +87,6 @@ export class Chronogram {
 
 		d3.select(vis.div).append('br');
 
-		// Dimensions
-		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
-		vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
-
-		// Strict filter of invalid bees
-		vis.data = vis.data.filter(d =>
-			Number.isFinite(+d.bee_id) &&
-			+d.bee_id > 0
-		);
 
 		// Time domain (seconds since video start)
 		vis.videoStart = d3.min(vis.data, d => d.timestamp_start);
@@ -227,6 +231,9 @@ export class Chronogram {
 			.attr('transform', `translate(0, 30)`)
 			.call(vis.xAxis);
 
+		// Timeline handles
+		vis.leftHandleX = 0;
+		vis.rightHandleX = vis.width;
 		
 		// Left side line
 		vis.timeframeSelectorA = vis.timeline.append('line')
@@ -249,27 +256,30 @@ export class Chronogram {
 			.attr('stroke-width', 3);
 
 		const drag = d3.drag()
-			.on('drag', function(event) {
+			.on("drag", function (event) {
 				const mouseX = Math.max(0, Math.min(vis.width, event.x));
-				const isLeft = d3.select(this).classed('left-selector');
+				const isLeft = d3.select(this).classed("left-selector");
 
 				if (isLeft) {
-					const rightX = +vis.timeframeSelectorB.attr('x1');
-					const finalX = Math.min(mouseX, rightX - 5);
-				
-					vis.timeframeSelectorA.attr('x1', finalX).attr('x2', finalX);
-					vis.selectedTimes[0] = vis.xScale.invert(finalX);
-				}
-				else {
-					const leftX = +vis.timeframeSelectorA.attr('x1');
-					const finalX = Math.max(mouseX, leftX + 5);
-
-					vis.selectedTimes[1] = vis.xScale.invert(finalX);			
-					vis.timeframeSelectorB.attr('x1', finalX).attr('x2', finalX);
+					vis.leftHandleX = Math.min(mouseX, vis.rightHandleX - 5);
+					vis.timeframeSelectorA
+						.attr("x1", vis.leftHandleX)
+						.attr("x2", vis.leftHandleX);
+				} else {
+					vis.rightHandleX = Math.max(mouseX, vis.leftHandleX + 5);
+					vis.timeframeSelectorB
+						.attr("x1", vis.rightHandleX)
+						.attr("x2", vis.rightHandleX);
 				}
 
-				console.log(vis.selectedTimes)
-				vis.onTimelineUpdate();
+				const start = vis.videoStart + vis.xScale.invert(vis.leftHandleX);
+				const end = vis.videoStart + vis.xScale.invert(vis.rightHandleX);
+
+				vis.dispatcher.call(
+					"timeRangeChanged",
+					this,
+					[start, end]
+				);
 			});
 
 		vis.timeframeSelectorA
@@ -282,7 +292,6 @@ export class Chronogram {
         	.style('cursor', 'ew-resize')
         	.call(drag);
 
-
 		vis.chartContent = vis.chartArea.append('g')
 			.attr('class', 'chart-content')
 			.attr('clip-path', 'url(#chronogram-chart-clip)');
@@ -291,23 +300,29 @@ export class Chronogram {
 		vis.updateVis();
 	}
 
-	onTimelineUpdate() {
-		
-
-	}
-
-
-	updateSelection(selectedBees) {
+	updateFilters({ selectedBees, timeRange }) {
 		let vis = this;
 
-		vis.selectedBees = [];
+		vis.selectedBees = selectedBees ?? [];
+		vis.timeRange = timeRange ?? null;
 
-		selectedBees.forEach(bee => {
-			const b = +bee;
-			if (!Number.isNaN(b) && !vis.selectedBees.includes(b)) {
-				vis.selectedBees.push(b);
-			}
-		});
+		if (vis.timeRange) {
+			const [start, end] = vis.timeRange;
+
+			const localStart = start - vis.videoStart;
+			const localEnd = end - vis.videoStart;
+
+			vis.leftHandleX = vis.xScale(localStart);
+			vis.rightHandleX = vis.xScale(localEnd);
+
+			vis.timeframeSelectorA
+				.attr("x1", vis.leftHandleX)
+				.attr("x2", vis.leftHandleX);
+
+			vis.timeframeSelectorB
+				.attr("x1", vis.rightHandleX)
+				.attr("x2", vis.rightHandleX);
+		}
 
 		vis.updateVis();
 	}

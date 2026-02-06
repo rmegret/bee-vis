@@ -14,6 +14,7 @@ export class Barchart {
 		this.div = this.config.parentElement;
 
 		this.selectedBees = [];
+		this.timeRange = null;
 
 		this.xFilters = ['bee_id', 'visited_flower'];
 		this.yFilters = ['visit_count', 'total_duration'];
@@ -205,21 +206,13 @@ export class Barchart {
 		vis.updateVis();
 	}
 
-	//Function for handling cross-vis interactivity with gallery
-	updateSelection(selectedBees) {
+	updateFilters({ selectedBees, timeRange }) {
 		let vis = this;
 
-		vis.selectedBees = [];
+		vis.selectedBees = selectedBees ?? [];
+		vis.timeRange = timeRange ?? null;
 
-		selectedBees.forEach(bee => {
-			if (!vis.selectedBees.includes(bee)) {
-				vis.selectedBees.push(+bee);
-			} else {
-				return ;
-			}
-		});
-
-		vis.renderVis();
+		vis.updateVis();
 	}
 
 	updateVis() {
@@ -231,11 +224,30 @@ export class Barchart {
 		d3.select('#title').text(`Total Visit ${vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}  by ${vis.xLabelSplit[0].charAt(0).toUpperCase() + vis.xLabelSplit[0].slice(1) + " " + vis.xLabelSplit[1].charAt(0).toUpperCase() + vis.xLabelSplit[1].slice(1)}`);
 		d3.select('#x-label').text(`${vis.xLabelSplit[0].charAt(0).toUpperCase() + vis.xLabelSplit[0].slice(1) + " " + vis.xLabelSplit[1].charAt(0).toUpperCase() + vis.xLabelSplit[1].slice(1)}`);
 		d3.select('#y-label').text(`${vis.yLabelSplit[0].charAt(0).toUpperCase() + vis.yLabelSplit[0].slice(1) + " " + vis.yLabelSplit[1].charAt(0).toUpperCase() + vis.yLabelSplit[1].slice(1)}`);
+
+		vis.filteredData = vis.data;
+
+		// Bee Filter
+		if (vis.selectedBees.length > 0) {
+			vis.filteredData = vis.filteredData.filter(d =>
+				vis.selectedBees.includes(+d.bee_id)
+			);
+		}
+
+		// Time Filter
+		if (vis.timeRange) {
+			const [start, end] = vis.timeRange;
+			vis.filteredData = vis.filteredData.filter(d =>
+				d.timestamp_end >= start &&
+				d.timestamp_start <= end
+			);
+		}
+
 		//Rollup data based on the bar key.
 		if (vis.selectedXData === 'bee_id') {
 			const selectedAttributes = vis.cats.get(vis.selectedCat);  
 			vis.aggregatedData = d3.rollups(
-				vis.data,
+				vis.filteredData,
 				v => {
 					//Base case: Aggregate all visits and durations into 1.
 					if (vis.selectedCat === 'cat0') {
@@ -273,7 +285,7 @@ export class Barchart {
 		}		
 		else {
 			vis.aggregatedData = d3.rollups(
-				vis.data, 
+				vis.filteredData, 
 			  		v => ({
     					total_duration: [d3.sum(v, d => d.visit_duration)],
     					visit_count: [v.length],
@@ -382,9 +394,9 @@ export class Barchart {
     			enter => enter.append('rect')
         			.attr('class', 'bar')
 					.attr('x', (d, i) => i * (vis.xScale.bandwidth() / barData.length))
-					.attr('y', d => vis.yScale(d[vis.selectedYData]))
+					.attr('y', vis.yScale(0))
 					.attr('width', vis.xScale.bandwidth() / barData.length)
-        			.attr('height', d => vis.height - vis.yScale(d[vis.selectedYData]))
+        			.attr('height', 0)
 					.attr('stroke', 'black')
         			.style('fill', d => {
 						if (vis.selectedCat === 'cat0') {
@@ -393,7 +405,7 @@ export class Barchart {
 							return utility.getCssVar(`--attr${d.attrIndex}`)
 						}
 					})
-        			.on('mouseover', (event, d) => {
+					.on('mouseover', (event, d) => {
             			vis.tooltip.style('visibility', 'visible')
                 		.html(`
 							<strong>${vis.yLabelSplit[0].charAt(0).toUpperCase() + vis.yLabelSplit[0].slice(1) + " " + 
@@ -407,7 +419,10 @@ export class Barchart {
                 			.style('top', `${event.pageY - 10}px`)
                 			.style('left', `${event.pageX + 10}px`);
         			})
-        			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden')),
+        			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'))
+					.transition().duration(500)
+					.attr('y', d => vis.yScale(d[vis.selectedYData]))
+        			.attr('height', d => vis.height - vis.yScale(d[vis.selectedYData])),
 
     			update => update
         			.transition().duration(750)

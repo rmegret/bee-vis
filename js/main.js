@@ -1,12 +1,5 @@
 import { convert_columns_to_number, join_data, get_bee_image } from "./utility.js";
-import { Chronogram } from "./vis/chronogram.js"
-import { Barchart } from "./vis/barchart.js"
-import { Patchview } from "./vis/patchview.js"
-import { Gallery } from "./vis/gallery.js"
-
-
-//Global variable for entire vis
-var gui = {};
+import { View } from "./vis/view.js";
 
 // Global variables for current file paths
 var data_dir = 'data/gift_for_pablo/';
@@ -68,82 +61,35 @@ async function group_categories() {
 	return catMap;
 }
 
-
-async function show_chronogram(dataframe, catMap) {	
-  	gui.chronogram = new Chronogram({
-    	parentElement: '#chronogram',
-  	}, dataframe, catMap);
-
-  	return true;
-}
-
-async function show_gallery(dataframe) {
-    gui.gallery = new Gallery({
-        parentElement: '#gallery',
-    }, dataframe, gui);
-
-    return true;
-}
-
-async function show_barchart(dataframe, catMap) {
-	gui.barchart = new Barchart({
-		parentElement: '#bar',
-	}, dataframe, catMap);
-
-	return true;
-}
-
-async function show_patchview(dataframe, catMap) {
-  	gui.patchview = new Patchview({
-    	parentElement: '#patchview',
-  	}, dataframe, catMap);
-
-  return true;
-}
-
-
-async function show_visualization() {		
+async function show_visualization() {
 	clear_main();
 	clear_vis_container();
 
 	const dataframe = await prep_data();
-	const catMap = await group_categories();	
+	const catMap = await group_categories();
 
 	d3.select(".exp_title")
 		.text(`Experiment: ${dataframe[0].experiment_name}`);
 
-	await show_chronogram(dataframe, catMap);
-	await show_barchart(dataframe, catMap);
-	await show_patchview(dataframe, catMap);
-	await show_gallery(dataframe);
-
+	// Create the top-level coordinator
+	new View(dataframe, catMap);
 }
 
-
 function clear_main() {
-	var mainDiv = d3.select('#main');
-  	mainDiv.html('');
+	d3.select("#main").html("");
 }
 
 function clear_vis_container() {
-	var chronogramContainer = d3.select('#chronogram');
-	chronogramContainer.html('');
-
-	var patchviewContainer = d3.select('#patchview');
-	patchviewContainer.html('');
-
-	var galleryContainer = d3.select('#gallery');
-	galleryContainer.html('');
-
-	var barContainer = d3.select('#bar');
-	barContainer.html('');
+	d3.select("#chronogram").html("");
+	d3.select("#patchview").html("");
+	d3.select("#gallery").html("");
+	d3.select("#bar").html("");
 }
 
 /*
 TO DO:
 
 - MODULAR VISUALIZATIONS THAT CAN BE ADDED OR REMOVED
-- Top level handler for callbacks
 - Timeframe selection global change on data
 - Current timestamp line on chronogram
 - Account for multiple videos in chronogram

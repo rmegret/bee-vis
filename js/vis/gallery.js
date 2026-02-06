@@ -1,7 +1,7 @@
 import * as utility from "../utility.js"
 
 export class Gallery {
-	constructor(_config, _data, _gui, _dispatcher){
+	constructor(_config, _data, _dispatcher){
 		this.config = {
 			parentElement: _config.parentElement,
 			containerWidth: 850,
@@ -10,9 +10,10 @@ export class Gallery {
 		};
 		this.data = _data;
 		this.dispatcher = _dispatcher;
-		this.gui = _gui;
 		this.div = _config.parentElement;
+
 		this.selectedBees = [];
+
 		this.initVis();
 	}
 
@@ -73,18 +74,27 @@ export class Gallery {
 		vis.reset = d3.select(vis.config.parentElement).append('button')
 			.text('Reset')
 			.on('click', () => {
-				vis.selectedBees = [];
-				d3.selectAll('.img')
-					.style('filter', 'none');
-				
-				if (vis.gui.barchart.selectedXData == 'bee_id') {
-					vis.gui.barchart.updateSelection(vis.selectedBees);
-				}
-				vis.gui.patchview.updateVis(vis.selectedBees);
-				vis.gui.chronogram.updateSelection(vis.selectedBees);
+				vis.dispatcher.call("resetSelection", this);
 			});
 
 		vis.updateVis();	
+	}
+
+	updateFilters({ selectedBees }) {
+		let vis = this;
+
+		vis.selectedBees = selectedBees ?? [];
+
+		vis.chartArea.selectAll('.img')
+			.style('filter', d => {
+				if (!vis.selectedBees.includes(+d.bee_id)) return 'none';
+
+				if (+d.bee_id === 6) {
+					return 'drop-shadow(0 0 8px black)';
+				}
+
+				return `drop-shadow(0 0 8px ${d._beeCssColor})`;
+			});
 	}
 
     updateVis() {
@@ -142,31 +152,20 @@ export class Gallery {
 			})
 			.on('mouseout', () => vis.tooltip.style('visibility', 'hidden'))
 			.on('click', function(event, d) {
+				let nextSelection;
+
 				if (vis.selectedBees.includes(+d.bee_id)) {
-					vis.selectedBees = vis.selectedBees.filter(bee => bee != d.bee_id);
-					d3.select(this)
-						.style('filter', 'none');
-				}
+					nextSelection = vis.selectedBees.filter(bee => bee !== +d.bee_id);
+				} 
 				else {
-					vis.selectedBees.push(+d.bee_id);
-
-					//If bee is white, black drop shadow
-					if (d.bee_id == 6) { 
-						d3.select(this)
-							.style('filter',d => `drop-shadow(0 0 8px black)`);
-					}
-
-					//Apply corresponding drop shadow to all other bees
-					else { 
-						d3.select(this)
-							.style('filter',d => `drop-shadow(0 0 8px ${d._beeCssColor})`);
-					}
+					nextSelection = [...vis.selectedBees, +d.bee_id];
 				}
-				if (vis.gui.barchart.selectedXData == 'bee_id') {
-					vis.gui.barchart.updateSelection(vis.selectedBees);
-				}
-				vis.gui.patchview.updateVis(vis.selectedBees);
-				vis.gui.chronogram.updateSelection(vis.selectedBees);
-			});
+
+				vis.dispatcher.call(
+					"selectionChanged",
+					this,
+					nextSelection
+				);
+			});	
 	}
 }

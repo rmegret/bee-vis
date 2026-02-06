@@ -1,22 +1,26 @@
-import * as d3 from "d3";
-import { Chronogram } from "./vis/chronogram.js";
-import { Barchart } from "./vis/barchart.js";
-import { Patchview } from "./vis/patchview.js";
-import { Gallery } from "./vis/gallery.js";
+import { Chronogram } from "./chronogram.js";
+import { Barchart } from "./barchart.js";
+import { Patchview } from "./patchview.js";
+import { Gallery } from "./gallery.js";
 
 export class View {
 	constructor(data, catMap) {
 		this.data = data;
 		this.catMap = catMap;
 
-		// Central event bus
+		// Global interaction state (single source of truth)
+		this.selectedBees = [];
+		this.timeRange = null;
+
+		// Central dispatcher
 		this.dispatcher = d3.dispatch(
 			"selectionChanged",
+			"timeRangeChanged",
 			"resetSelection"
 		);
 
-		// All active visualization instances live here
-		// { type: string, instance: object }
+		// All active visualization instances
+		// { type, instance }
 		this.views = [];
 
 		this.initViews();
@@ -65,39 +69,42 @@ export class View {
 	}
 
 	initDispatchHandlers() {
-		// Bee selection propagated to all views
+		// Bee selection (from Gallery)
 		this.dispatcher.on("selectionChanged.view", selectedBees => {
-			this.views.forEach(v => {
-				if (typeof v.instance.updateSelection === "function") {
-					v.instance.updateSelection(selectedBees);
-				}
+			this.selectedBees = selectedBees;
+			this.propagateFilters();
+		});
 
-				// Patchview uses a different method name
-				if (typeof v.instance.updateVis === "function") {
-					v.instance.updateVis(selectedBees);
-				}
-			});
+		// Time range selection (from Chronogram)
+		this.dispatcher.on("timeRangeChanged.view", timeRange => {
+			this.timeRange = timeRange;
+			console.log(this.timeRange);
+			this.propagateFilters();
 		});
 
 		// Global reset
 		this.dispatcher.on("resetSelection.view", () => {
-			this.views.forEach(v => {
-				if (typeof v.instance.updateSelection === "function") {
-					v.instance.updateSelection([]);
-				}
+			this.selectedBees = [];
+			this.timeRange = null;
+			this.propagateFilters();
+		});
+	}
 
-				if (typeof v.instance.updateVis === "function") {
-					v.instance.updateVis([]);
-				}
-			});
+	propagateFilters() {
+		const filterState = {
+			selectedBees: this.selectedBees,
+			timeRange: this.timeRange
+		};
+
+		this.views.forEach(v => {
+			if (typeof v.instance.updateFilters === "function") {
+				v.instance.updateFilters(filterState);
+			}
 		});
 	}
 
 	addView(type, instance) {
-		this.views.push({
-			type: type,
-			instance: instance
-		});
+		this.views.push({ type, instance });
 	}
 }
 
