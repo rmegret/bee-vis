@@ -96,153 +96,172 @@ export class Patchview {
         vis.renderVis();
     }
 
-	renderVis() {
-		let vis = this;
-		vis.svg.selectAll("*").remove();
-		if (!vis.filteredVisits || vis.filteredVisits.length < 2) return;
+		renderVis() {
+			let vis = this;
 
-		const defs = vis.svg.append("defs");
-		const visitsByBee = d3.group(vis.filteredVisits, d => +d.bee_id);
+			// 1. Clear previous render and basic checks
+			vis.svg.selectAll("*").remove();
+			if (!vis.filteredVisits || vis.filteredVisits.length < 2) return;
+			if (vis.selectedBees.length === 0) return;
 
-		visitsByBee.forEach((visits, beeId) => {
-			const beeColorName = utility.get_bee_color(beeId);
-			const beeColor = utility.getCssVar(`--primary-${beeColorName}`) || beeColorName || "gray";
+			const defs = vis.svg.append("defs");
+			const visitsByBee = d3.group(vis.filteredVisits, d => +d.bee_id);
 
-			const transitions = [];
-			for (let i = 0; i < visits.length - 1; i++) {
-				const v = visits[i];
-				const next = visits[i + 1];
-				transitions.push({
-					from: v.flower.center,
-					to: next.flower.center,
-					fromFlower: v.flower,
-					fromFlowerId: v.flower_id,
-					toFlower: next.flower,
-					toFlowerId: next.flower_id,
-					duration: (next.timestamp_start - v.timestamp_end) / 1000,
-					isStart: i === 0,
-					isEnd: i === visits.length - 2
-				});
-				}
+			visitsByBee.forEach((visits, beeId) => {
+				const beeColorName = utility.get_bee_color(beeId);
+				const beeColor = utility.getCssVar(`--primary-${beeColorName}`) || beeColorName || "gray";
 
-			const pathCounts = new Map();
-			transitions.forEach(t => {
-				const key = `${t.from.x},${t.from.y}->${t.to.x},${t.to.y}`;
-				pathCounts.set(key, (pathCounts.get(key) || 0) + 1);
-			});
+				// 2. Drastic Global Gradient Calculation
+				// Spans the bounding box of the bee's total movement area for a continuous feel
+				const allX = visits.map(v => vis.xScale(v.flower.center.x));
+				const allY = visits.map(v => vis.yScale(v.flower.center.y));
+				const minX = d3.min(allX);
+				const maxX = d3.max(allX);
+				const minY = d3.min(allY);
+				const maxY = d3.max(allY);
 
-			const pathLaneIndex = new Map();
-			const laneSpacing = 20; 
-
-			transitions.forEach((t, i) => {
-				const key = `${t.from.x},${t.from.y}->${t.to.x},${t.to.y}`;
-				const count = pathCounts.get(key);
-				const used = pathLaneIndex.get(key) || 0;
-				pathLaneIndex.set(key, used + 1);
-
-				const offset = (used - (count - 1) / 2) * laneSpacing;
-				const isSelfLoop = t.from.x === t.to.x && t.from.y === t.to.y;
-
-				const x1 = vis.xScale(t.from.x);
-				const y1 = vis.yScale(t.from.y);
-				const x2 = vis.xScale(t.to.x);
-				const y2 = vis.yScale(t.to.y);
-
-				const gradId = `grad-${beeId}-${i}`;
-				const gradient = defs.append("linearGradient")
-					.attr("id", gradId)
+				const globalGradId = `grad-bee-${beeId}`;
+				const globalGradient = defs.append("linearGradient")
+					.attr("id", globalGradId)
 					.attr("gradientUnits", "userSpaceOnUse")
-					.attr("x1", x1).attr("y1", y1).attr("x2", x2).attr("y2", y2);
+					.attr("x1", minX).attr("y1", minY)
+					.attr("x2", maxX).attr("y2", maxY);
 
-				gradient.append("stop").attr("offset", "0%").attr("stop-color", beeColor).attr("stop-opacity", 0.2);
-				gradient.append("stop").attr("offset", "100%").attr("stop-color", beeColor).attr("stop-opacity", 1);
+				// Drastic Gradient: High contrast opacity ramp
+				globalGradient.append("stop").attr("offset", "0%").attr("stop-color", beeColor).attr("stop-opacity", 0.0);
+				globalGradient.append("stop").attr("offset", "15%").attr("stop-color", beeColor).attr("stop-opacity", 0.1);
+				globalGradient.append("stop").attr("offset", "100%").attr("stop-color", beeColor).attr("stop-opacity", 1.0);
 
-				let d;
-				if (isSelfLoop) {
-					const r = 12 + (used * 8);
-					d = `M ${x1},${y1} A ${r},${r} 0 1,1 ${x1 + 0.1},${y1}`;
-				} else {
-					const { midpoint, ortho } = vis.getMidVector(t.from.x, t.from.y, t.to.x, t.to.y);
-						
-					const bend = 30 + Math.abs(offset); 
-					const ctrlX = vis.xScale(midpoint[0] + ortho[0] * bend);
-					const ctrlY = vis.yScale(midpoint[1] + ortho[1] * bend);
-
-					const points = [
-						[x1, y1],
-						[ctrlX, ctrlY],
-						[ctrlX, ctrlY],
-						[x2, y2]
-					];
-					d = vis.curve(points);
+				// 3. Generate Transitions
+				const transitions = [];
+				for (let i = 0; i < visits.length - 1; i++) {
+					const v = visits[i];
+					const next = visits[i + 1];
+					transitions.push({
+						from: v.flower.center,
+						to: next.flower.center,
+						fromFlowerId: v.visited_flower,
+						toFlowerId: next.visited_flower,
+						duration: (new Date(next.timestamp_start) - new Date(v.timestamp_end)) / 1000,
+						visitIndex: i + 1,
+						isStart: i === 0,
+						isEnd: i === visits.length - 2
+					});
 				}
 
-				const markerId = `arrow-${beeId}-${i}`;
-				defs.append("marker")
-					.attr("id", markerId)
-					.attr("viewBox", "0 -5 10 10")
-					.attr("refX", 8)
-					.attr("refY", 0)
-					.attr("markerWidth", 5)
-					.attr("markerHeight", 5)
-					.attr("orient", "auto")
-					.append("path").attr("d", "M0,-5L10,0L0,5").attr("fill", beeColor);
-
-				const path = vis.svg.append("path")
-					.attr("d", d)
-					.attr("fill", "none")
-					.attr("stroke", `url(#${gradId})`)
-					.attr("stroke-width", 3)
-					.attr("marker-end", isSelfLoop ? "" : `url(#${markerId})`)
-					.style("pointer-events", "stroke")
-					.style("cursor", "pointer");
-
-				path.on("mouseover", (event) => {
-					d3.select(event.currentTarget).attr("stroke-width", 6);
-
-					const beeIdLabel = beeId;
-					const fromId = t.fromFlowerId;
-					const toId = t.toFlowerId;
-					
-					const durationLabel = (typeof t.duration === 'number' && !isNaN(t.duration)) 
-						? t.duration.toFixed(2) + "s" 
-						: "N/A";
-
-					console.log("Hovered Transition Object:", t);
-
-					vis.tooltip
-						.style("opacity", 1)
-						.html(`
-							<div style="border-bottom: 1px solid #555; margin-bottom: 5px; padding-bottom: 3px;">
-								<strong>Bee ID:</strong> ${beeIdLabel}
-							</div>
-							<strong>From:</strong> ${fromId}<br/>
-							<strong>To:</strong> ${toId}<br/>
-						`);
-				})
-				.on("mousemove", (event) => {
-					vis.tooltip
-						.style("left", (event.pageX + 15) + "px")
-						.style("top", (event.pageY - 15) + "px");
-				})
-				.on("mouseout", (event) => {
-					d3.select(event.currentTarget).attr("stroke-width", 3);
-					vis.tooltip.style("opacity", 0);
+				// 4. Lane Logic (Multiple trips between same flowers)
+				const pathCounts = new Map();
+				transitions.forEach(t => {
+					const key = `${t.from.x},${t.from.y}->${t.to.x},${t.to.y}`;
+					pathCounts.set(key, (pathCounts.get(key) || 0) + 1);
 				});
-				// Indicators
-				if (t.isStart) {
-					vis.svg.append("circle")
-						.attr("cx", x1).attr("cy", y1)
-						.attr("r", 5).attr("fill", beeColor).attr("stroke", "#333");
-				}
-				if (t.isEnd) {
-					vis.svg.append("circle")
-						.attr("cx", x2).attr("cy", y2)
-						.attr("r", 5).attr("fill", "#fff").attr("stroke", beeColor).attr("stroke-width", 2);
-				}
+
+				const pathLaneIndex = new Map();
+				const laneSpacing = 22; 
+
+				// 5. Draw the Paths
+				transitions.forEach((t, i) => {
+					const key = `${t.from.x},${t.from.y}->${t.to.x},${t.to.y}`;
+					const count = pathCounts.get(key);
+					const used = pathLaneIndex.get(key) || 0;
+					pathLaneIndex.set(key, used + 1);
+
+					const offset = (used - (count - 1) / 2) * laneSpacing;
+					const isSelfLoop = (t.from.x === t.to.x && t.from.y === t.to.y);
+
+					const x1 = vis.xScale(t.from.x);
+					const y1 = vis.yScale(t.from.y);
+					const x2 = vis.xScale(t.to.x);
+					const y2 = vis.yScale(t.to.y);
+
+					let d;
+					if (isSelfLoop) {
+						const r = 15 + (used * 10);
+						d = `M ${x1},${y1} A ${r},${r} 0 1,1 ${x1 + 0.1},${y1}`;
+					} else {
+						// 4-Point Arc Logic: Maintains the "Old" bow look with lane spacing
+						const { midpoint, ortho } = vis.getMidVector(t.from.x, t.from.y, t.to.x, t.to.y);
+						const bendAmount = 40 + Math.abs(offset); 
+						const ctrlX = vis.xScale(midpoint[0] + ortho[0] * bendAmount);
+						const ctrlY = vis.yScale(midpoint[1] + ortho[1] * bendAmount);
+
+						const points = [
+							[x1, y1],
+							[ctrlX, ctrlY],
+							[ctrlX, ctrlY], 
+							[x2, y2]
+						];
+						d = vis.curve(points);
+					}
+
+					// Arrowhead setup
+					const markerId = `arrow-${beeId}-${i}`;
+					defs.append("marker")
+						.attr("id", markerId)
+						.attr("viewBox", "0 -5 10 10")
+						.attr("refX", 9) 
+						.attr("refY", 0)
+						.attr("markerWidth", 4)
+						.attr("markerHeight", 4)
+						.attr("orient", "auto")
+						.append("path")
+						.attr("d", "M0,-5L10,0L0,5")
+						.attr("fill", beeColor);
+
+					const path = vis.svg.append("path")
+						.attr("d", d)
+						.attr("fill", "none")
+						.attr("stroke", `url(#${globalGradId})`) 
+						.attr("stroke-width", 3) // Fixed thickness restored
+						.attr("marker-end", isSelfLoop ? "" : `url(#${markerId})`)
+						.attr("stroke-linecap", "round")
+						.style("pointer-events", "stroke")
+						.style("cursor", "pointer")
+						.style("opacity", 0.85);
+
+					// 6. Interaction & Tooltip
+					path.on("mouseover", (event) => {
+						d3.select(event.currentTarget)
+							.attr("stroke-width", 6)
+							.style("opacity", 1);
+						
+						vis.tooltip
+							.style("opacity", 1)
+							.html(`
+								<div style="border-bottom: 1px solid #777; padding-bottom: 2px; margin-bottom: 4px;">
+									<strong>Bee:</strong> ${beeId}
+								</div>
+								<strong>Trip:</strong> #${t.visitIndex}<br/>
+								<strong>Path:</strong> ${t.fromFlowerId} to ${t.toFlowerId}<br/>
+								<strong>Duration:</strong> ${t.duration.toFixed(2)}s
+							`);
+					})
+					.on("mousemove", (event) => {
+						vis.tooltip
+							.style("left", (event.pageX + 15) + "px")
+							.style("top", (event.pageY - 15) + "px");
+					})
+					.on("mouseout", (event) => {
+						d3.select(event.currentTarget)
+							.attr("stroke-width", 3)
+							.style("opacity", 0.85);
+						vis.tooltip.style("opacity", 0);
+					});
+
+					// 7. Node Markers
+					if (t.isStart) {
+						vis.svg.append("circle")
+							.attr("cx", x1).attr("cy", y1)
+							.attr("r", 5).attr("fill", beeColor).attr("stroke", "#000");
+					}
+					if (t.isEnd) {
+						vis.svg.append("circle")
+							.attr("cx", x2).attr("cy", y2)
+							.attr("r", 5).attr("fill", "#fff").attr("stroke", beeColor).attr("stroke-width", 2);
+					}
+				});
 			});
-		});
-	}
+		}
 
     getMidVector(x1, y1, x2, y2) {
         const midX = (x1 + x2) / 2;

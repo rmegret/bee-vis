@@ -90,7 +90,6 @@ function clear_vis_container() {
 TO DO:
 
 - MODULAR VISUALIZATIONS THAT CAN BE ADDED OR REMOVED
-- Timeframe selection global change on data
 - Current timestamp line on chronogram
 - Account for multiple videos in chronogram
 - Clean up timestamp handling 
