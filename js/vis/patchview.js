@@ -1,192 +1,265 @@
 import * as utility from "../utility.js";
 
 export class Patchview {
-	constructor(_config, _data, _dispatcher) {
-		this.config = {
-			parentElement: _config.parentElement,
-			containerWidth: 704,
-			containerHeight: 704,
-		};
-		this.data = _data;
-		this.dispatcher = _dispatcher;
-		this.div = _config.parentElement;
+    constructor(_config, _data, _dispatcher) {
+        this.config = {
+            parentElement: _config.parentElement,
+            containerWidth: 704,
+            containerHeight: 704,
+        };
+        this.data = _data;
+        this.dispatcher = _dispatcher;
+        this.div = _config.parentElement;
+        
+        this.selectedBees = [];
+        this.timeRange = null;
+
+        this.initVis();
+    }
+
+    initVis() {
+        let vis = this;
+
+        vis.container = d3.select(vis.div)
+            .style('position', 'relative')
+            .style('display', 'inline-block')
+            .style('margin-left', '50px');
+
+        // Video setup
+        vis.video = vis.container.append("video")
+            .attr("width", vis.config.containerWidth)
+            .attr("height", vis.config.containerHeight)
+            .attr("muted", true)
+            .attr("controls", true);
+
+        vis.video.append("source")
+            .attr("src", "data/b1_8MP_2025-06-03_11-10-31_3.cfr.mp4")
+            .attr("type", "video/mp4");
+
+        // SVG Overlay
+        vis.svg = vis.container.append("svg")
+            .attr("width", vis.config.containerWidth)
+            .attr("height", vis.config.containerHeight)
+            .style("position", "absolute")
+            .style("top", 0)
+            .style("left", 0)
+            .style("pointer-events", "none");
+
+        // Tooltip
+        vis.tooltip = d3.select("body").selectAll(".patchview-tooltip").data([1]);
+        vis.tooltip = vis.tooltip.enter()
+            .append("div")
+            .attr("class", "patchview-tooltip")
+            .style("position", "absolute")
+            .style("pointer-events", "none")
+            .style("background", "rgba(0,0,0,0.85)")
+            .style("color", "#fff")
+            .style("padding", "8px")
+            .style("border-radius", "4px")
+            .style("font-size", "12px")
+            .style("z-index", "100")
+            .style("opacity", 0)
+            .merge(vis.tooltip);
+
+        // Scales
+        vis.xScale = d3.scaleLinear().domain([0, 2816]).range([0, vis.config.containerWidth]);
+        vis.yScale = d3.scaleLinear().domain([0, 2816]).range([0, vis.config.containerHeight]);
+        vis.curve = d3.line().curve(d3.curveNatural);
+
+        vis.renderVis();
+    }
+
+    updateFilters({ selectedBees, timeRange }) {
+		this.selectedBees = selectedBees ?? [];
+        this.timeRange = timeRange ?? null;
 		
-		this.selectedBees = [];
+		this.updateVis();
+    }
 
-		this.initVis();
-	}
+    updateVis() {
+        let vis = this;
+        let filtered = vis.data;
 
-	initVis() {
-		let vis = this;
+        if (vis.selectedBees.length > 0) {
+            filtered = filtered.filter(d => vis.selectedBees.includes(+d.bee_id));
+        }
 
-		d3.select(vis.div)
-			.style('position', 'relative')
-			.style('display', 'inline-block')
-			.style('margin-left', '50px')
+        if (vis.timeRange) {
+            const [start, end] = vis.timeRange;
+            filtered = filtered.filter(d => d.timestamp_start <= end && d.timestamp_end >= start);
+        }
 
-		//If video exists, append video
-			vis.video = d3.select(vis.div).append("video")
-				.attr("width", vis.config.containerWidth)
-				.attr("height", vis.config.containerHeight)
-				.attr("muted", true)
-				.attr("controls", true);
+        vis.filteredVisits = filtered
+            .filter(d => d.flower && d.flower.center)
+            .sort((a, b) => a.timestamp_start - b.timestamp_start);
 
-		vis.video.append("source")
-			.attr("src", "data/b1_8MP_2025-06-03_11-10-31_3.cfr.mp4")
-			.attr("type", "video/mp4");
-
-		//If no video exists, render image instead
-
-
-		//If neither exist, console log error and don't render the view
-
-		// ---- SVG OVERLAY ----
-		vis.svg = d3.select(vis.div).append("svg")
-			.attr("width", vis.config.containerWidth)
-			.attr("height", vis.config.containerHeight)
-			.style("position", "absolute")
-			.style("top", 0)
-			.style("left", 0)
-			.style("pointer-events", "none");
-
-		// ---- SCALES ----
-		vis.xScale = d3.scaleLinear()
-			.domain([0, 2816])
-			.range([0, vis.config.containerWidth]);
-
-		vis.yScale = d3.scaleLinear()
-			.domain([0, 2816])
-			.range([0, vis.config.containerHeight]);
-
-		vis.curve = d3.line().curve(d3.curveNatural);
-
-		vis.renderVis();
-	}
-
-	// ---- CALLED BY OTHER VIEWS ----
-	updateVis(selectedBees) {
-		let vis = this;
-
-		vis.selectedBees = selectedBees || [];
-
-		vis.filteredVisits = vis.data
-			.filter(d =>
-				vis.selectedBees.includes(+d.bee_id) &&
-				d.flower &&
-				d.flower.center
-			)
-			.sort((a, b) => a.timestamp_start - b.timestamp_start);
-
-		vis.renderVis();
-	}
+        vis.renderVis();
+    }
 
 	renderVis() {
 		let vis = this;
-
 		vis.svg.selectAll("*").remove();
-
 		if (!vis.filteredVisits || vis.filteredVisits.length < 2) return;
 
-		// Arrow marker
 		const defs = vis.svg.append("defs");
-		defs.append("marker")
-			.attr("id", "arrowhead")
-			.attr("viewBox", "0 -5 10 10")
-			.attr("refX", 10)
-			.attr("refY", 0)
-			.attr("markerWidth", 6)
-			.attr("markerHeight", 6)
-			.attr("orient", "auto")
-			.append("path")
-			.attr("d", "M0,-5L10,0L0,5")
-			.attr("fill", "#333");
-
 		const visitsByBee = d3.group(vis.filteredVisits, d => +d.bee_id);
 
 		visitsByBee.forEach((visits, beeId) => {
 			const beeColorName = utility.get_bee_color(beeId);
-			const beeColor =
-				utility.getCssVar(`--primary-${beeColorName}`) ||
-				beeColorName ||
-				"gray";
+			const beeColor = utility.getCssVar(`--primary-${beeColorName}`) || beeColorName || "gray";
 
-			let offsetMap = new Map();
-
+			const transitions = [];
 			for (let i = 0; i < visits.length - 1; i++) {
-				const a = visits[i];
-				const b = visits[i + 1];
+				const v = visits[i];
+				const next = visits[i + 1];
+				transitions.push({
+					from: v.flower.center,
+					to: next.flower.center,
+					fromFlower: v.flower,
+					fromFlowerId: v.flower_id,
+					toFlower: next.flower,
+					toFlowerId: next.flower_id,
+					duration: (next.timestamp_start - v.timestamp_end) / 1000,
+					isStart: i === 0,
+					isEnd: i === visits.length - 2
+				});
+				}
 
-				if (!a.flower || !b.flower) continue;
+			const pathCounts = new Map();
+			transitions.forEach(t => {
+				const key = `${t.from.x},${t.from.y}->${t.to.x},${t.to.y}`;
+				pathCounts.set(key, (pathCounts.get(key) || 0) + 1);
+			});
 
-				const from = a.flower.center;
-				const to = b.flower.center;
+			const pathLaneIndex = new Map();
+			const laneSpacing = 20; 
 
-				const pathKey = `${from.x}-${from.y}-${to.x}-${to.y}`;
-				const offset = (offsetMap.get(pathKey) || 0) + 40;
-				offsetMap.set(pathKey, offset);
+			transitions.forEach((t, i) => {
+				const key = `${t.from.x},${t.from.y}->${t.to.x},${t.to.y}`;
+				const count = pathCounts.get(key);
+				const used = pathLaneIndex.get(key) || 0;
+				pathLaneIndex.set(key, used + 1);
 
-				const { midpoint, ortho } =
-					this.getMidVector(from.x, from.y, to.x, to.y);
+				const offset = (used - (count - 1) / 2) * laneSpacing;
+				const isSelfLoop = t.from.x === t.to.x && t.from.y === t.to.y;
 
-				const points = [
-					[vis.xScale(from.x), vis.yScale(from.y)],
-					[
-						vis.xScale(midpoint[0] + ortho[0] * offset),
-						vis.yScale(midpoint[1] + ortho[1] * offset)
-					],
-					[vis.xScale(to.x), vis.yScale(to.y)]
-				];
+				const x1 = vis.xScale(t.from.x);
+				const y1 = vis.yScale(t.from.y);
+				const x2 = vis.xScale(t.to.x);
+				const y2 = vis.yScale(t.to.y);
+
+				const gradId = `grad-${beeId}-${i}`;
+				const gradient = defs.append("linearGradient")
+					.attr("id", gradId)
+					.attr("gradientUnits", "userSpaceOnUse")
+					.attr("x1", x1).attr("y1", y1).attr("x2", x2).attr("y2", y2);
+
+				gradient.append("stop").attr("offset", "0%").attr("stop-color", beeColor).attr("stop-opacity", 0.2);
+				gradient.append("stop").attr("offset", "100%").attr("stop-color", beeColor).attr("stop-opacity", 1);
+
+				let d;
+				if (isSelfLoop) {
+					const r = 12 + (used * 8);
+					d = `M ${x1},${y1} A ${r},${r} 0 1,1 ${x1 + 0.1},${y1}`;
+				} else {
+					const { midpoint, ortho } = vis.getMidVector(t.from.x, t.from.y, t.to.x, t.to.y);
+						
+					const bend = 30 + Math.abs(offset); 
+					const ctrlX = vis.xScale(midpoint[0] + ortho[0] * bend);
+					const ctrlY = vis.yScale(midpoint[1] + ortho[1] * bend);
+
+					const points = [
+						[x1, y1],
+						[ctrlX, ctrlY],
+						[ctrlX, ctrlY],
+						[x2, y2]
+					];
+					d = vis.curve(points);
+				}
+
+				const markerId = `arrow-${beeId}-${i}`;
+				defs.append("marker")
+					.attr("id", markerId)
+					.attr("viewBox", "0 -5 10 10")
+					.attr("refX", 8)
+					.attr("refY", 0)
+					.attr("markerWidth", 5)
+					.attr("markerHeight", 5)
+					.attr("orient", "auto")
+					.append("path").attr("d", "M0,-5L10,0L0,5").attr("fill", beeColor);
 
 				const path = vis.svg.append("path")
-					.datum(points)
+					.attr("d", d)
 					.attr("fill", "none")
-					.attr("stroke", beeColor)
+					.attr("stroke", `url(#${gradId})`)
 					.attr("stroke-width", 3)
-					.attr("d", vis.curve);
+					.attr("marker-end", isSelfLoop ? "" : `url(#${markerId})`)
+					.style("pointer-events", "stroke")
+					.style("cursor", "pointer");
 
-				if (i > 0) {
-					path.attr("marker-end", "url(#arrowhead)");
-				}
+				path.on("mouseover", (event) => {
+					d3.select(event.currentTarget).attr("stroke-width", 6);
 
-				if (i === 0) {
+					const beeIdLabel = beeId;
+					const fromId = t.fromFlowerId;
+					const toId = t.toFlowerId;
+					
+					const durationLabel = (typeof t.duration === 'number' && !isNaN(t.duration)) 
+						? t.duration.toFixed(2) + "s" 
+						: "N/A";
+
+					console.log("Hovered Transition Object:", t);
+
+					vis.tooltip
+						.style("opacity", 1)
+						.html(`
+							<div style="border-bottom: 1px solid #555; margin-bottom: 5px; padding-bottom: 3px;">
+								<strong>Bee ID:</strong> ${beeIdLabel}
+							</div>
+							<strong>From:</strong> ${fromId}<br/>
+							<strong>To:</strong> ${toId}<br/>
+						`);
+				})
+				.on("mousemove", (event) => {
+					vis.tooltip
+						.style("left", (event.pageX + 15) + "px")
+						.style("top", (event.pageY - 15) + "px");
+				})
+				.on("mouseout", (event) => {
+					d3.select(event.currentTarget).attr("stroke-width", 3);
+					vis.tooltip.style("opacity", 0);
+				});
+				// Indicators
+				if (t.isStart) {
 					vis.svg.append("circle")
-						.attr("cx", points[0][0])
-						.attr("cy", points[0][1])
-						.attr("r", 6)
-						.attr("fill", beeColor)
-						.attr("stroke", "#333");
+						.attr("cx", x1).attr("cy", y1)
+						.attr("r", 5).attr("fill", beeColor).attr("stroke", "#333");
 				}
-			}
+				if (t.isEnd) {
+					vis.svg.append("circle")
+						.attr("cx", x2).attr("cy", y2)
+						.attr("r", 5).attr("fill", "#fff").attr("stroke", beeColor).attr("stroke-width", 2);
+				}
+			});
 		});
 	}
 
-	getMidVector(x1, y1, x2, y2) {
-		const midX = (x1 + x2) / 2;
-		const midY = (y1 + y2) / 2;
-
-		const dx = x2 - x1;
-		const dy = y2 - y1;
-
-		let ox = -dy;
-		let oy = dx;
-
-		const len = Math.sqrt(ox * ox + oy * oy);
-		if (len === 0) return { midpoint: [midX, midY], ortho: [0, 0] };
-
-		return {
-			midpoint: [midX, midY],
-			ortho: [ox / len, oy / len]
-		};
-	}
+    getMidVector(x1, y1, x2, y2) {
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        let ox = -dy;
+        let oy = dx;
+        const len = Math.sqrt(ox * ox + oy * oy);
+        if (len === 0) return { midpoint: [midX, midY], ortho: [0, 0] };
+        return { midpoint: [midX, midY], ortho: [ox / len, oy / len] };
+    }
 }
-
 
 /*
 To do:
 Scale for time difference between visits
 
-Curvature: Based on number of visits on a list of repeated flower visits
 Thickness based on transition times
-Preprocess transition times
-Wavelength for transition
 */

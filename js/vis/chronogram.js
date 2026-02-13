@@ -129,9 +129,8 @@ export class Chronogram {
 		// SVG & chart area
 		vis.svg = d3.select(vis.div).append('svg')
 			.attr('width', vis.config.containerWidth)
-			.attr('height', vis.config.containerHeight);
-
-		vis.svg.attr('overflow', 'visible');
+			.attr('height', vis.config.containerHeight)
+			.attr('overflow', 'visible');
 
 		vis.chartArea = vis.svg.append('g')
 			.attr('transform', `translate(${vis.config.margin.left},${vis.config.margin.top})`);
@@ -249,7 +248,19 @@ export class Chronogram {
 		// Timeline handles
 		vis.leftHandleX = 0;
 		vis.rightHandleX = vis.width;
+		vis.selectionWidth = vis.rightHandleX - vis.leftHandleX;
 		
+
+		// Selection highlight in timeline
+		vis.timelineHighlight = vis.timeline.append('rect')
+			.attr('class', 'timeline-highlight')
+			.attr('x', vis.leftHandleX)
+			.attr('y', 0)
+			.attr('width', vis.selectionWidth)
+			.attr('height', 30)
+			.attr('stroke', '#333')
+			.style('fill', '#ADD8E6')
+
 		// Left side line
 		vis.timeframeSelectorA = vis.timeline.append('line')
 			.attr('class', 'selector-line')
@@ -270,6 +281,64 @@ export class Chronogram {
 			.attr('stroke', '#333')
 			.attr('stroke-width', 3);
 
+		// Drag handler for highlight rect
+		const highlightDrag = d3.drag()
+			.on("start", function (event) {
+				const [px] = d3.pointer(event, vis.timeline.node());
+				vis.dragOffsetX = px - vis.leftHandleX;
+			})
+			.on("drag", function (event) {
+				const [px] = d3.pointer(event, vis.timeline.node());
+
+				let newLeft = px - vis.dragOffsetX;
+				let newRight = newLeft + vis.selectionWidth;
+
+				// Clamp
+				if (newLeft < 0) {
+					newLeft = 0;
+					newRight = vis.selectionWidth;
+				}
+				if (newRight > vis.width) {
+					newRight = vis.width;
+					newLeft = vis.width - vis.selectionWidth;
+				}
+
+				vis.leftHandleX = newLeft;
+				vis.rightHandleX = newRight;
+
+				// Move selector lines
+				vis.timeframeSelectorA
+					.attr("x1", newLeft)
+					.attr("x2", newLeft);
+
+				vis.timeframeSelectorB
+					.attr("x1", newRight)
+					.attr("x2", newRight);
+
+				// Move highlight
+				vis.timelineHighlight
+					.attr("x", newLeft)
+					.attr("width", vis.selectionWidth);
+
+				// Dispatch
+				const start = vis.videoStart + vis.xScale.invert(newLeft);
+				const end = vis.videoStart + vis.xScale.invert(newRight);
+
+				vis.dispatcher.call(
+					"timeRangeChanged",
+					this,
+					[start, end]
+				);
+			});
+
+
+		// Attach drag handler to highlight rect
+		vis.timelineHighlight
+			.style("cursor", "move")
+			.call(highlightDrag);
+
+
+		// Drag handler for selection lines
 		const drag = d3.drag()
 			.on("drag", function (event) {
 				const mouseX = Math.max(0, Math.min(vis.width, event.x));
@@ -288,6 +357,13 @@ export class Chronogram {
 						.attr("x2", vis.rightHandleX);
 				}
 
+				// Update highlight position
+				vis.selectionWidth = vis.rightHandleX - vis.leftHandleX;	
+				vis.timelineHighlight
+					.attr("x", vis.leftHandleX)
+					.attr("width", vis.selectionWidth);
+
+				// Dispatch updated time range
 				const start = vis.videoStart + vis.xScale.invert(vis.leftHandleX);
 				const end = vis.videoStart + vis.xScale.invert(vis.rightHandleX);
 
@@ -298,6 +374,7 @@ export class Chronogram {
 				);
 			});
 
+		// Attach drag handler to the selection lines
 		vis.timeframeSelectorA
         	.classed('left-selector', true)
         	.style('cursor', 'ew-resize')
